@@ -1,0 +1,30 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"> 
+<html lang="en-US" xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+	<title>Busmap</title>
+
+	<link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.5.1/leaflet.css" />
+	<!--[if lte IE 8]>
+	    <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.5.1/leaflet.ie.css" />
+	<![endif]-->
+	<script src="http://cdn.leafletjs.com/leaflet-0.5.1/leaflet.js"></script>
+	<script type="text/javascript" src="busmap.js"></script>
+</head>
+<body>
+<table>
+<tr>
+<td vAlign="top">
+	<table>
+	<tr><td><button id="btnRefresh" onclick="btnRefreshOnClick()">get them</button></td></tr>
+	<tr><td>cell2</td></tr>
+	</table>
+<td><div id="map" style="width:1000px; height:500px;">
+	<script type="text/javascript">
+		initmap();
+	</script>
+</div></td>
+</tr>
+</table>
+</body>
