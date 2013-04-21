@@ -37,6 +37,10 @@ function getRouteDescriptionHTML(arTags){
 	return "toDo";
 }
 
+function generateColorFromRef(ref){
+	return "green";
+}
+
 function getRoutes() {
 	var bbox=new Object();
 	bbox.N=map.getBounds().getNorthEast().lat;
@@ -86,7 +90,7 @@ function getRoutes() {
 		routes[i]=new Object();
 		routes[i].multiPolyline=lines;
 		routes[i].name=tags["name"];
-		routes[i].color="green";
+		routes[i].color=generateColorFromRef(tags["ref"]);
 		routes[i].htmlDescription=getRouteDescriptionHTML(tags);
 	}
 
