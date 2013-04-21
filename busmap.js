@@ -4,8 +4,8 @@
 
 
 var map;
-var xmlDoc;
 var routes;
+var routeLayers=new Array();
 
 function initmap() {
 	// set up the map
@@ -96,12 +96,44 @@ function getRoutes() {
 
 }
 
+function createCheckboxes(){
+	td=document.getElementById("cellRoutesList");
+	while (td.firstChild) td.removeChild(td.firstChild);
+	
+	for (var i in routes){
+		var checkbox= document.createElement("input");
+		checkbox.type="checkbox";
+		checkbox.id="route"+i;
+		checkbox.checked=true;
+		checkbox.addEventListener("change",checkOnChange);
+		text=document.createTextNode(routes[i].name);
+		br=document.createElement('br');
+		td.appendChild(checkbox);
+		td.appendChild(text);
+		td.appendChild(br);
+	}
+}
+
+function checkOnChange(){
+	createLayers();
+}
+
+function createLayers(){
+	while(routeLayers.length>0) map.removeLayer(routeLayers.pop());
+	for (var i in routes){
+		checkbox=document.getElementById("route"+i);
+		if (checkbox.checked){
+			mpline=new L.MultiPolyline(routes[i].multiPolyline,{color:routes[i].color});
+			mpline.bindPopup(routes[i].name);
+			map.addLayer(mpline);
+			routeLayers.push(mpline);
+		}
+	}
+}
+
 function btnRefreshOnClick() {
 	getRoutes();
-	for (var i in routes){
-		mpline=new L.MultiPolyline(routes[i].multiPolyline,{color:routes[i].color});
-		mpline.bindPopup(routes[i].name);
-		map.addLayer(mpline);
-	}
+	createCheckboxes();
+	createLayers();
 }
 
