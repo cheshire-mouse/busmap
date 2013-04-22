@@ -108,7 +108,8 @@ function processOSMData(){
 		routes[i].htmlDescription=getRouteDescriptionHTML(tags);
 	}
 	createCheckboxes();
-	createLayers();
+	generateLayers();
+	addLayers();
 	enableButtons();
 }
 
@@ -161,16 +162,23 @@ function createCheckboxes(){
 	}
 }
 
-function createLayers(){
+function generateLayers(){
 	while(routeLayers.length>0) map.removeLayer(routeLayers.pop());
 	for (var i in routes){
+		mpline=new L.MultiPolyline(routes[i].multiPolyline,{color:routes[i].color});
+		mpline.bindPopup(routes[i].name);
+		routeLayers[i]=mpline;
+	}
+
+}
+
+function addLayers(){
+	for (var i in routes){
 		checkbox=document.getElementById("route"+i);
-		if (checkbox.checked){
-			mpline=new L.MultiPolyline(routes[i].multiPolyline,{color:routes[i].color});
-			mpline.bindPopup(routes[i].name);
-			map.addLayer(mpline);
-			routeLayers.push(mpline);
-		}
+		if ( checkbox.checked && !map.hasLayer(routeLayers[i]) )
+			map.addLayer(routeLayers[i]);
+		else if ( !checkbox.checked && map.hasLayer(routeLayers[i]) )
+			map.removeLayer(routeLayers[i]);
 	}
 }
 
@@ -183,7 +191,7 @@ function enableButtons(){
 }
 
 function checkOnChange(){
-	createLayers();
+	addLayers();
 }
 
 function btnRefreshOnClick() {
