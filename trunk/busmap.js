@@ -6,6 +6,7 @@
 var map;
 var routes;
 var routeLayers=new Array();
+var xmlhttp;
 
 function initmap() {
 	// set up the map
@@ -41,7 +42,7 @@ function generateColorFromRef(ref){
 	return "green";
 }
 
-function getRoutes() {
+function requestRoutes() {
 	var bbox=new Object();
 	bbox.N=map.getBounds().getNorthEast().lat;
 	bbox.E=(map.getBounds()).getNorthEast().lng;
@@ -58,10 +59,22 @@ function getRoutes() {
 	   xmlhttp=new ActiveXObject("Microsoft.XMLHTTP");
 	   }
 	overpass_url='http://overpass.osm.rambler.ru/cgi/interpreter?data=relation[type=route][route=bus]('+strBbox+');(._;>);out meta;'
-	xmlhttp.open("GET",overpass_url,false);
+	xmlhttp.open("GET",overpass_url,true);
+	xmlhttp.onreadystatechange=processOSMData;
 	xmlhttp.send();
+	disableButtons();
 	//xmlText=xmlhttp.responseText;
-	xmlDoc=xmlhttp.responseXML;
+}
+
+function processOSMData(){
+	if (xmlhttp.readyState != 4) return;
+	if (xmlhttp.status != 200){
+		alert(xmlhttp.status+" "+xmlhttp.statusText);
+		enableButtons();
+		return;
+	}
+
+	var xmlDoc=xmlhttp.responseXML;
 	nodeslist=xmlDoc.getElementsByTagName("node");
 	var nodesar=new Array();
 	for (var i=0;i<nodeslist.length;i++)	nodesar[nodeslist[i].id]=nodeslist[i];
@@ -93,7 +106,9 @@ function getRoutes() {
 		routes[i].color=generateColorFromRef(tags["ref"]);
 		routes[i].htmlDescription=getRouteDescriptionHTML(tags);
 	}
-
+	createCheckboxes();
+	createLayers();
+	enableButtons();
 }
 
 function createCheckboxes(){
@@ -114,10 +129,6 @@ function createCheckboxes(){
 	}
 }
 
-function checkOnChange(){
-	createLayers();
-}
-
 function createLayers(){
 	while(routeLayers.length>0) map.removeLayer(routeLayers.pop());
 	for (var i in routes){
@@ -131,9 +142,19 @@ function createLayers(){
 	}
 }
 
-function btnRefreshOnClick() {
-	getRoutes();
-	createCheckboxes();
+function disableButtons(){
+	document.getElementById("btnRefresh").disabled=true;
+}
+
+function enableButtons(){
+	document.getElementById("btnRefresh").disabled=false;
+}
+
+function checkOnChange(){
 	createLayers();
+}
+
+function btnRefreshOnClick() {
+	requestRoutes();
 }
 
