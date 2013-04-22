@@ -28,7 +28,7 @@ function tagsToArray(nlTags){
 	for (var i=0;i<nlTags.length;i++){
 		key=nlTags[i].attributes.k.value;
 		value=nlTags[i].attributes.v.value;
-		console.debug(key+" "+value);
+		//console.debug(key+" "+value);
 		tags[key]=value;
 	}
 	return tags;
@@ -100,8 +100,9 @@ function processOSMData(){
 				}
 			}
 		}
+		console.debug(tags["name"]);
 		routes[i]=new Object();
-		routes[i].multiPolyline=lines;
+		routes[i].multiPolyline=mergeLines(lines);
 		routes[i].name=tags["name"];
 		routes[i].color=generateColorFromRef(tags["ref"]);
 		routes[i].htmlDescription=getRouteDescriptionHTML(tags);
@@ -109,6 +110,37 @@ function processOSMData(){
 	createCheckboxes();
 	createLayers();
 	enableButtons();
+}
+
+//merge adjucent lines in the array of lines
+//result is still array of lines (if there are no gaps
+//it will contain only one element)
+function mergeLines(arLines){
+	console.debug("mergeLines, in: "+arLines.length);
+	if (arLines.length<2) return arLines;
+	var arMergedLines=new Array();
+	for (var i=0;i<arLines.length-1;i++){
+		ar1first=arLines[i][0];
+		ar1last=arLines[i][arLines[i].length-1];
+		ar2first=arLines[i+1][0];
+		ar2last=arLines[i+1][arLines[i+1].length-1];
+		if ( ar1first.equals(ar2first) ) arLines[i].reverse();
+		else if ( ar1last.equals(ar2last) ) arLines[i+1].reverse();
+		else if ( ar1first.equals(ar2last) ) {
+			arLines[i].reverse();
+			arLines[i+1].reverse();
+		}
+		ar2first=arLines[i+1][0];
+		ar1last=arLines[i][arLines[i].length-1];
+		if (ar2first.equals(ar1last)){
+			arLines[i].pop();
+			arLines[i+1]=arLines[i].concat(arLines[i+1]);
+		}
+		else arMergedLines.push(arLines[i]);
+	}
+	arMergedLines.push(arLines[arLines.length-1]);
+	console.debug("mergeLines, out: "+arMergedLines.length);
+	return arMergedLines;
 }
 
 function createCheckboxes(){
