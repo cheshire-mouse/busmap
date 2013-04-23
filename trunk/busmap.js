@@ -40,7 +40,10 @@ function getRouteDescriptionHTML(arTags){
 }
 
 function generateColorFromRef(ref){
-	return "green";
+	color="#"+Math.floor(Math.random()*0xffffff).toString(16);
+	console.debug("gencolor "+color);
+
+	return color;
 }
 
 function requestRoutes() {
@@ -118,7 +121,7 @@ function processOSMData(){
 //result is still array of lines (if there are no gaps
 //it will contain only one element)
 function mergeLines(arLines){
-	console.debug("mergeLines, in: "+arLines.length);
+	//console.debug("mergeLines, in: "+arLines.length);
 	if (arLines.length<2) return arLines;
 	var arMergedLines=new Array();
 	for (var i=0;i<arLines.length-1;i++){
@@ -141,7 +144,7 @@ function mergeLines(arLines){
 		else arMergedLines.push(arLines[i]);
 	}
 	arMergedLines.push(arLines[arLines.length-1]);
-	console.debug("mergeLines, out: "+arMergedLines.length);
+	//console.debug("mergeLines, out: "+arMergedLines.length);
 	return arMergedLines;
 }
 
