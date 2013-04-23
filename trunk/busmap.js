@@ -7,6 +7,7 @@ var map;
 var routes;
 var routeLayers=new Array();
 var xmlhttp;
+var checkedCount=0;
 
 function initmap() {
 	// set up the map
@@ -169,16 +170,19 @@ function generateLayers(){
 		mpline.bindPopup(routes[i].name);
 		routeLayers[i]=mpline;
 	}
-
 }
 
 function addLayers(){
 	for (var i in routes){
 		checkbox=document.getElementById("route"+i);
-		if ( checkbox.checked && !map.hasLayer(routeLayers[i]) )
+		if ( checkbox.checked && !map.hasLayer(routeLayers[i]) ){
 			map.addLayer(routeLayers[i]);
-		else if ( !checkbox.checked && map.hasLayer(routeLayers[i]) )
+			checkedCount++;
+		}
+		else if ( !checkbox.checked && map.hasLayer(routeLayers[i]) ){
 			map.removeLayer(routeLayers[i]);
+			checkedCount--;
+		}
 	}
 }
 
@@ -194,7 +198,19 @@ function checkOnChange(){
 	addLayers();
 }
 
+function checkAll(){
+	//nlInput=document.getElementsByTagName("input");
+	for (var i=0; i<routes.length;i++){
+		chk=document.getElementById("route"+i);
+		chk.checked=(checkedCount<routes.length);
+	}
+}
+
 function btnRefreshOnClick() {
 	requestRoutes();
 }
 
+function btnCheckAllOnClick() {
+	checkAll();
+	addLayers();
+}
