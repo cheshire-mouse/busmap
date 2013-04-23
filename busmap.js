@@ -78,10 +78,10 @@ function processOSMData(){
 	var xmlDoc=xmlhttp.responseXML;
 	nodeslist=xmlDoc.getElementsByTagName("node");
 	var nodesar=new Array();
-	for (var i=0;i<nodeslist.length;i++)	nodesar[nodeslist[i].id]=nodeslist[i];
+	for (var i=0;i<nodeslist.length;i++)	nodesar[nodeslist[i].attributes.id.value]=nodeslist[i];
 	wayslist=xmlDoc.getElementsByTagName("way");
 	var waysar=new Array();
-	for (var i=0;i<wayslist.length;i++)	waysar[wayslist[i].id]=wayslist[i];
+	for (var i=0;i<wayslist.length;i++) waysar[wayslist[i].attributes.id.value]=wayslist[i];
 	rels=xmlDoc.getElementsByTagName("relation");
 	routes=new Array();
 	for (var i=0;i<rels.length;i++){
