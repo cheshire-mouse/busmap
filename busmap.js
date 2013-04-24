@@ -22,7 +22,7 @@ function initmap() {
 	// create the tile layer with correct attribution
 	var osmUrl='http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
 	var osmAttrib='Map data © OpenStreetMap contributors';
-	var osm = new L.TileLayer(osmUrl, {minZoom: 1, maxZoom: 18, attribution: osmAttrib});		
+	var osm = new L.TileLayer(osmUrl, {opacity: 0.5, minZoom: 1, maxZoom: 18, attribution: osmAttrib});		
 
 	//map.setView(new L.LatLng(0, 0),1);
 	map.locate({setView:true});
