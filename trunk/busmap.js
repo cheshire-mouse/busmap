@@ -27,6 +27,9 @@ function initmap() {
 	//map.setView(new L.LatLng(0, 0),1);
 	map.locate({setView:true});
 	map.addLayer(osm);
+	//for (var i=1;i<15;i++){
+	//	generateColorFromRef(i);
+	//}
 
 }
 
@@ -60,9 +63,19 @@ function getRouteDescriptionHTML(arTags){
 }
 
 function generateColorFromRef(ref){
-	color="#"+Math.floor(Math.random()*0xffffff).toString(16);
-	console.debug("gencolor "+color);
+	//color="#"+Math.floor(Math.random()*0xffffff).toString(16);
+	//console.debug("gencolor "+color);
 
+	//return color;
+	p=3;
+	b=Math.pow( p, Math.floor( Math.log(ref) / Math.log(p) ) + 1 );
+	var astart=1;
+	var aend=ref-b/p+1;
+	for (a=astart; a<=aend;a++)
+			if (a/p==Math.floor(a/p)) aend++;
+	a--;
+	color="#"+Math.floor(1.0*a/b*0xffffff).toString(16);
+	console.debug("color "+color+" "+ref+" "+(a)+"/"+b);
 	return color;
 }
 
