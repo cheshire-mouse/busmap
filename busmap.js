@@ -8,6 +8,12 @@ var routes;
 var routeLayers=new Array();
 var xmlhttp;
 var checkedCount=0;
+var activeLayer=null;
+
+var defaultOpacity=0.5;
+var defaultWeight=5;
+var activeOpacity=1;
+var activeWeight=10;
 
 function initmap() {
 	// set up the map
@@ -36,7 +42,21 @@ function tagsToArray(nlTags){
 }
 
 function getRouteDescriptionHTML(arTags){
-	return "toDo";
+	var fields=new Array();
+	fields.push({id:"ref",name:"Номер"});
+	fields.push({id:"from",name:"Откуда"});
+	fields.push({id:"to",name:"Куда"});
+	fields.push({id:"operator",name:"Владелец"});
+	var description="";
+	if (arTags["name"]!=null) description +="<h3>"+arTags["name"]+"</h3>";
+	description+="<table>";
+	for (var i in fields){
+		if (arTags[fields[i].id]!=null) 
+			description +="<tr><td>"+fields[i].name+
+				"</td><td>"+arTags[fields[i].id]+"</td></tr>";
+	}
+	description+="</table>";
+	return description;
 }
 
 function generateColorFromRef(ref){
@@ -111,6 +131,7 @@ function processOSMData(){
 		routes[i].color=generateColorFromRef(tags["ref"]);
 		routes[i].htmlDescription=getRouteDescriptionHTML(tags);
 	}
+	routes.sort(compareRoutes);
 	createCheckboxes();
 	generateLayers();
 	addLayers();
@@ -169,8 +190,10 @@ function createCheckboxes(){
 function generateLayers(){
 	while(routeLayers.length>0) map.removeLayer(routeLayers.pop());
 	for (var i in routes){
-		mpline=new L.MultiPolyline(routes[i].multiPolyline,{color:routes[i].color});
-		mpline.bindPopup(routes[i].name);
+		mpline=new L.MultiPolyline(routes[i].multiPolyline,
+				{color:routes[i].color,opacity:defaultOpacity,weight:defaultWeight});
+		//mpline.bindPopup(routes[i].name);
+		mpline.on('click',routeOnClick);
 		routeLayers[i]=mpline;
 	}
 }
@@ -209,6 +232,14 @@ function checkAll(){
 	}
 }
 
+function compareRoutes(a,b){
+	if (a.name < b.name)
+		return -1;
+	if (a.name > b.name)
+		return 1;
+	return 0;
+}
+
 function btnRefreshOnClick() {
 	requestRoutes();
 }
@@ -216,4 +247,24 @@ function btnRefreshOnClick() {
 function btnCheckAllOnClick() {
 	checkAll();
 	addLayers();
+}
+
+function routeOnClick(e){
+	var layer=e.target;
+	layer.bringToFront();
+	if (activeLayer!=null) 
+		activeLayer.setStyle({opacity:defaultOpacity,weight:defaultWeight});
+	if (activeLayer==layer)	{
+		activeLayer=null;
+		map.closePopup();
+	}
+	else {
+		layer.setStyle({opacity:activeOpacity,weight:activeWeight});
+		activeLayer=layer;
+		routeid=routeLayers.indexOf(layer);
+		var popup = L.popup();
+		popup.setLatLng(e.latlng);
+	        popup.setContent(routes[routeid].htmlDescription);
+		map.openPopup(popup);
+	}
 }
