@@ -27,10 +27,6 @@ function initmap() {
 	//map.setView(new L.LatLng(0, 0),1);
 	map.locate({setView:true});
 	map.addLayer(osm);
-	//for (var i=1;i<15;i++){
-	//	generateColorFromRef(i);
-	//}
-
 }
 
 function tagsToArray(nlTags){
@@ -63,19 +59,23 @@ function getRouteDescriptionHTML(arTags){
 }
 
 function generateColorFromRef(ref){
-	//color="#"+Math.floor(Math.random()*0xffffff).toString(16);
-	//console.debug("gencolor "+color);
-
-	//return color;
-	p=3;
-	b=Math.pow( p, Math.floor( Math.log(ref) / Math.log(p) ) + 1 );
-	var astart=1;
-	var aend=ref-b/p+1;
-	for (a=astart; a<=aend;a++)
+	var color;
+	num=parseInt(ref,10);
+	if ( isNaN(num) || num < 1 ) 
+		color="#"+Math.floor(Math.random()*0xffffff).toString(16);
+	else {
+		//i can't say for sure what this formula is doing 
+		//so don't use it if you do not.... just don't use it at all
+		p=3; //magic number, do not use 2^n
+		b=Math.pow( p, Math.floor( Math.log(num) / Math.log(p) ) + 1 );
+		var astart=1;
+		var aend=num-b/p+1;
+		for (a=astart; a<=aend;a++)
 			if (a/p==Math.floor(a/p)) aend++;
-	a--;
-	color="#"+Math.floor(1.0*a/b*0xffffff).toString(16);
-	console.debug("color "+color+" "+ref+" "+(a)+"/"+b);
+		a--;
+		color="#"+Math.floor(1.0*a/b*0xffffff).toString(16);
+		console.debug("color "+color+" "+num+" "+(a)+"/"+b);
+	}
 	return color;
 }
 
