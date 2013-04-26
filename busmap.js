@@ -5,7 +5,9 @@
 
 var map;
 var routes;
+var busstops;
 var routeLayers=new Array();
+var busstopLayers=new Array();
 var xmlhttp;
 var checkedCount=0;
 var activeLayer=null;
@@ -22,7 +24,7 @@ function initmap() {
 	// create the tile layer with correct attribution
 	var osmUrl='http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
 	var osmAttrib='Map data © OpenStreetMap contributors';
-	var osm = new L.TileLayer(osmUrl, {opacity: 0.5, minZoom: 1, maxZoom: 18, attribution: osmAttrib});		
+	var osm = new L.TileLayer(osmUrl, { minZoom: 1, maxZoom: 18, attribution: osmAttrib});		
 
 	//map.setView(new L.LatLng(0, 0),1);
 	map.locate({setView:true});
@@ -64,7 +66,7 @@ function generateColorFromRef(ref){
 	if ( isNaN(num) || num < 1 ) 
 		color="#"+Math.floor(Math.random()*0xffffff).toString(16);
 	else {
-		//i can't say for sure what this formula is doing 
+		//i can't say for sure what this formula does 
 		//so don't use it if you do not.... just don't use it at all
 		p=3; //magic number, do not use 2^n
 		b=Math.pow( p, Math.floor( Math.log(num) / Math.log(p) ) + 1 );
@@ -120,6 +122,8 @@ function processOSMData(){
 	for (var i=0;i<wayslist.length;i++) waysar[wayslist[i].attributes.id.value]=wayslist[i];
 	rels=xmlDoc.getElementsByTagName("relation");
 	routes=new Array();
+	arStops=new Array();
+	//create array of the routes objects
 	for (var i=0;i<rels.length;i++){
 		tags=tagsToArray(rels[i].getElementsByTagName("tag"));
 		var lines=new Array();
@@ -136,6 +140,12 @@ function processOSMData(){
 					lines[lines.length-1].push(new L.LatLng(lat, lon));
 				}
 			}
+			if (members[j].attributes.type.value=="node"){
+				nodeid=members[j].attributes.ref.value;
+				if (arStops[nodeid]==undefined) 
+					arStops[nodeid]=new Array();
+				arStops[nodeid].push(i);
+			}
 		}
 		console.debug(tags["name"]);
 		routes[i]=new Object();
@@ -143,6 +153,31 @@ function processOSMData(){
 		routes[i].name=tags["name"];
 		routes[i].color=generateColorFromRef(tags["ref"]);
 		routes[i].htmlDescription=getRouteDescriptionHTML(tags);
+		routes[i].ref=tags["ref"];
+		routes[i].stops=new Array();
+	}
+	//create array of the busstop objects
+	busstops=new Array();
+	for (var i in arStops){
+		var stop=new Object();
+		var tags=tagsToArray(nodesar[i].getElementsByTagName("tag"));
+		stop.name=tags["name"];
+		var lat=nodesar[i].attributes.lat.value;
+		var lon=nodesar[i].attributes.lon.value;
+		stop.latlon=new L.LatLng(lat,lon);
+		stop.routes=new Array();
+		stop.routesRefs=new Array();
+		for (var j in arStops[i]){
+			var r=arStops[i][j];
+			var ref=routes[r].ref;
+			stop.routes.push(routes[r]);
+			routes[r].stops.push(stop);
+			if (ref!=undefined) stop.routesRefs.push(ref);
+		}
+		stop.routesRefs=stop.routesRefs.filter(filterUnique);
+		stop.routesRefs.sort(compareRefs);
+		stop.visibleRoutes=0;
+		busstops.push(stop);
 	}
 	routes.sort(compareRoutes);
 	createCheckboxes();
@@ -202,12 +237,26 @@ function createCheckboxes(){
 
 function generateLayers(){
 	while(routeLayers.length>0) map.removeLayer(routeLayers.pop());
+	while(busstopLayers.length>0) map.removeLayer(busstopLayers.pop());
 	for (var i in routes){
 		mpline=new L.MultiPolyline(routes[i].multiPolyline,
 				{color:routes[i].color,opacity:defaultOpacity,weight:defaultWeight});
 		//mpline.bindPopup(routes[i].name);
 		mpline.on('click',routeOnClick);
 		routeLayers[i]=mpline;
+	}
+	for (var i in busstops){
+		circle=new L.Circle(busstops[i].latlon,20);
+		strPopup="<h3>"+busstops[i].name+"</h3>";
+		var first=true;
+		for (ref in busstops[i].routesRefs){
+			if (first) first=false;
+			else strPopup+=", ";
+			strPopup+=busstops[i].routesRefs[ref];
+		}
+		circle.bindPopup(strPopup);
+		busstopLayers[i]=circle;
+		busstops[i].layer=circle;
 	}
 }
 
@@ -217,10 +266,20 @@ function addLayers(){
 		if ( checkbox.checked && !map.hasLayer(routeLayers[i]) ){
 			map.addLayer(routeLayers[i]);
 			checkedCount++;
+			for (var j in routes[i].stops){
+				var stop=routes[i].stops[j];
+				stop.visibleRoutes++;
+				if (stop.visibleRoutes==1) map.addLayer(stop.layer);
+			}
 		}
 		else if ( !checkbox.checked && map.hasLayer(routeLayers[i]) ){
 			map.removeLayer(routeLayers[i]);
 			checkedCount--;
+			for (var j in routes[i].stops){
+				var stop=routes[i].stops[j];
+				stop.visibleRoutes--;
+				if (stop.visibleRoutes==0) map.removeLayer(stop.layer);
+			}
 		}
 	}
 }
@@ -251,6 +310,19 @@ function compareRoutes(a,b){
 	if (a.name > b.name)
 		return 1;
 	return 0;
+}
+
+function compareRefs(a,b){
+	if (parseInt(a) < parseInt(b)) return -1;
+	if (parseInt(a) > parseInt(b)) return 1;
+	if ( a < b ) return -1;
+	if ( a > b ) return 1;
+	return 0;
+}
+
+//requires js 1.6
+function filterUnique(value, index, self) { 
+	    return self.indexOf(value) === index;
 }
 
 function btnRefreshOnClick() {
