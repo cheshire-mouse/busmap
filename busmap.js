@@ -78,7 +78,7 @@ function generateColorFromRef(ref){
 		for (a=astart; a<=aend;a++)
 			if (a/p==Math.floor(a/p)) aend++;
 		a--;
-		color="#"+Math.floor(1.0*a/b*0xffffff).toString(16);
+		color="#"+pad( Math.floor(1.0*a/b*0xffffff).toString(16) , 6 );
 		console.debug("color "+color+" "+num+" "+(a)+"/"+b);
 	}
 	return color;
@@ -387,6 +387,11 @@ function compareRefs(a,b){
 //requires js 1.6
 function filterUnique(value, index, self) { 
 	    return self.indexOf(value) === index;
+}
+
+function pad(str,num){
+	var result_str="000000000000000000"+str;
+	return result_str.substring(result_str.length-num,result_str.length);
 }
 
 function btnRefreshOnClick() {
