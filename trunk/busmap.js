@@ -16,6 +16,7 @@ var defaultOpacity=0.5;
 var defaultWeight=5;
 var activeOpacity=1;
 var activeWeight=10;
+var simplificationDistance=10.0;
 
 function initmap() {
 	// set up the map
@@ -150,7 +151,7 @@ function processOSMData(){
 		console.debug(tags["name"]);
 		lines=mergeLines(lines);
 		for ( var l in lines )
-			lines[l]=simplifyLine(lines[l],10.0);
+			lines[l]=simplifyLine(lines[l],simplificationDistance);
 		routes[i]=new Object();
 		routes[i].multiPolyline=lines;
 		routes[i].name=tags["name"];
@@ -239,7 +240,7 @@ function simplifyLine(line,dist){
 		}
 	}
 	simpline.push(line[p2]);
-	console.debug("simplify: before "+line.length+" after "+simpline.length);
+	//console.debug("simplify: before "+line.length+" after "+simpline.length);
 	return simpline;
 }
 
@@ -282,7 +283,8 @@ function generateLayers(){
 		routeLayers[i]=mpline;
 	}
 	for (var i in busstops){
-		circle=new L.Circle(busstops[i].latlon,20);
+		//circle=new L.Circle(busstops[i].latlon,20);
+		circle=new L.CircleMarker(busstops[i].latlon);
 		strPopup="<h3>"+busstops[i].name+"</h3>";
 		var first=true;
 		for (ref in busstops[i].routesRefs){
