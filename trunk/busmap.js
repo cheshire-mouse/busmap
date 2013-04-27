@@ -264,9 +264,14 @@ function createCheckboxes(){
 		checkbox.id="route"+i;
 		checkbox.checked=true;
 		checkbox.addEventListener("change",checkOnChange);
+		span=document.createElement("span");
+		span.style.color=routes[i].color;
+		colorMarker=document.createTextNode("\u2588 ");
 		text=document.createTextNode(routes[i].name);
 		br=document.createElement('br');
+		span.appendChild(colorMarker);
 		td.appendChild(checkbox);
+		td.appendChild(span);
 		td.appendChild(text);
 		td.appendChild(br);
 	}
