@@ -11,6 +11,7 @@ var busstopLayers=new Array();
 var xmlhttp;
 var checkedCount=0;
 var activeLayer=null;
+var busstopsAllowed=true;
 
 var defaultOpacity=0.5;
 var defaultWeight=5;
@@ -312,7 +313,7 @@ function addLayers(){
 			for (var j in routes[i].stops){
 				var stop=routes[i].stops[j];
 				stop.visibleRoutes++;
-				if (stop.visibleRoutes==1) map.addLayer(stop.layer);
+				if (stop.visibleRoutes==1 && busstopsAllowed) map.addLayer(stop.layer);
 			}
 		}
 		else if ( !checkbox.checked && map.hasLayer(routeLayers[i]) ){
@@ -327,6 +328,18 @@ function addLayers(){
 	}
 }
 
+function addAllBusstopLayers(){
+	for (var i in busstops)
+		if ( busstops[i].visibleRoutes > 0 )
+			map.addLayer(busstops[i].layer);
+}
+
+function removeAllBusstopLayers(){
+	for (var i in busstops)
+		if ( busstops[i].visibleRoutes > 0 )
+			map.removeLayer(busstops[i].layer);
+}
+
 function disableButtons(){
 	document.getElementById("btnRefresh").disabled=true;
 }
@@ -337,6 +350,13 @@ function enableButtons(){
 
 function checkOnChange(){
 	addLayers();
+}
+
+function chkAllowStopsOnChange(){
+	var chk=document.getElementById("chkAllowStops")
+	busstopsAllowed=chk.checked;
+	if ( busstopsAllowed ) addAllBusstopLayers();
+	else  removeAllBusstopLayers();
 }
 
 function checkAll(){
