@@ -148,8 +148,11 @@ function processOSMData(){
 			}
 		}
 		console.debug(tags["name"]);
+		lines=mergeLines(lines);
+		for ( var l in lines )
+			lines[l]=simplifyLine(lines[l],10.0);
 		routes[i]=new Object();
-		routes[i].multiPolyline=mergeLines(lines);
+		routes[i].multiPolyline=lines;
 		routes[i].name=tags["name"];
 		routes[i].color=generateColorFromRef(tags["ref"]);
 		routes[i].htmlDescription=getRouteDescriptionHTML(tags);
@@ -215,6 +218,39 @@ function mergeLines(arLines){
 	arMergedLines.push(arLines[arLines.length-1]);
 	//console.debug("mergeLines, out: "+arMergedLines.length);
 	return arMergedLines;
+}
+
+//simplify the <line> by removing points that are closer then <dist>
+//to the line without them
+function simplifyLine(line,dist){
+	if (line.length<3) return line;
+	var p1=0;
+	var p2=1;
+	var simpline=new Array();
+	simpline.push(line[p1]);
+	while (p2<line.length-1){
+		p3=p2+1;
+		if ( distanceToLine(line[p1],line[p2],line[p3]) < dist ){
+			p2++;
+		}
+		else {
+			simpline.push(line[p2]);
+			p1=p2++;
+		}
+	}
+	simpline.push(line[p2]);
+	console.debug("simplify: before "+line.length+" after "+simpline.length);
+	return simpline;
+}
+
+// distance from point to line 
+// point end line ends are LanLng
+function distanceToLine(p,lp1,lp2){
+	var a=lp1.distanceTo(p);
+	var b=lp2.distanceTo(p);
+	var c=lp1.distanceTo(lp2);
+	var dist_sqr=a*a - Math.pow( ( a*a - b*b + c*c ) / ( 2 * c ), 2 );
+	return Math.sqrt(dist_sqr);
 }
 
 function createCheckboxes(){
