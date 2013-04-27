@@ -24,7 +24,8 @@ function initmap() {
 	map = new L.Map('map');
 
 	// create the tile layer with correct attribution
-	var osmUrl='http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+	//var osmUrl='http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+	var osmUrl="http://{s}.www.toolserver.org/tiles/bw-mapnik/{z}/{x}/{y}.png";
 	var osmAttrib='Map data © OpenStreetMap contributors';
 	var osm = new L.TileLayer(osmUrl, { minZoom: 1, maxZoom: 18, attribution: osmAttrib});		
 
@@ -290,7 +291,7 @@ function generateLayers(){
 	}
 	for (var i in busstops){
 		//circle=new L.Circle(busstops[i].latlon,20);
-		circle=new L.CircleMarker(busstops[i].latlon);
+		circle=new L.CircleMarker(busstops[i].latlon,{opacity:0.25});
 		strPopup="<h3>"+busstops[i].name+"</h3>";
 		var first=true;
 		for (ref in busstops[i].routesRefs){
