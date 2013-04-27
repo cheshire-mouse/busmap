@@ -156,7 +156,15 @@ function processOSMData(){
 			lines[l]=simplifyLine(lines[l],simplificationDistance);
 		routes[i]=new Object();
 		routes[i].multiPolyline=lines;
-		routes[i].name=tags["name"];
+		if (tags["name"]!=undefined) routes[i].name=tags["name"];
+		else {
+			if (tags["ref"]!=undefined) routes[i].name=tags["ref"];
+			if (tags["from"]!=undefined && tags["to"]!=undefined){
+				strDesc=tags["from"]+" - "+tags["to"];
+				if (tags["ref"]!=undefined) routes[i].name+=" "+strDesc;
+				else routes[i].name=strDesc;
+			}
+		}
 		routes[i].color=generateColorFromRef(tags["ref"]);
 		routes[i].htmlDescription=getRouteDescriptionHTML(tags);
 		routes[i].ref=tags["ref"];
