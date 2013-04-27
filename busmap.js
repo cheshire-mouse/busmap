@@ -17,7 +17,7 @@ var defaultOpacity=0.5;
 var defaultWeight=5;
 var activeOpacity=1;
 var activeWeight=10;
-var simplificationDistance=10.0;
+var simplificationDistance=3.0;
 
 function initmap() {
 	// set up the map
@@ -241,7 +241,7 @@ function simplifyLine(line,dist){
 	simpline.push(line[p1]);
 	while (p2<line.length-1){
 		p3=p2+1;
-		if ( distanceToLine(line[p1],line[p2],line[p3]) < dist ){
+		if ( distanceToLine(line[p2],line[p1],line[p3]) < dist ){
 			p2++;
 		}
 		else {
@@ -250,7 +250,7 @@ function simplifyLine(line,dist){
 		}
 	}
 	simpline.push(line[p2]);
-	//console.debug("simplify: before "+line.length+" after "+simpline.length);
+	console.debug("simplify: before "+line.length+" after "+simpline.length);
 	return simpline;
 }
 
