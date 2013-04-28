@@ -1,6 +1,8 @@
 // busmap scripts
 // author: gryphon
 // license: WTFPL v.2
+// $Revision$
+// $Date$
 
 
 var map;
