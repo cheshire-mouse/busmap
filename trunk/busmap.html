@@ -22,7 +22,12 @@
 	<tr><td>
 		<button id="btnRefresh" onclick="btnRefreshOnClick()">get routes</button>
 		<button id="btnCheckAll" onclick="btnCheckAllOnClick()">*</button>
-		<input type=checkbox id="chkAllowStops" checked=true onclick="chkAllowStopsOnChange()">
+		<br>
+		<input type=checkbox id="chkAllowStops" onclick="chkAllowStopsOnChange()">
+		<label>Bus stops</label>
+		<br>
+		<input type=checkbox id="chkAutorefresh" onclick="chkAutorefreshOnChange()">
+		<label>Autorefresh</label>
 	</td></tr>
 	<tr><td>
 		<div id="cellRoutesList" STYLE=" height: 500px; width: 200px; font-size: 12px; overflow: auto;">
