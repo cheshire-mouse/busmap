@@ -1,4 +1,4 @@
-// busmap scripts
+// busmap scripts (overpass version)
 // author: gryphon
 // license: WTFPL v.2
 // $Revision$
