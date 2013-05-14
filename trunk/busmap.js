@@ -29,8 +29,8 @@ function initmap() {
 	map = new L.Map('map');
 
 	// create the tile layer with correct attribution
-	var osmUrl='http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
-	//var osmUrl="http://{s}.www.toolserver.org/tiles/bw-mapnik/{z}/{x}/{y}.png";
+	//var osmUrl='http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+	var osmUrl="http://{s}.www.toolserver.org/tiles/bw-mapnik/{z}/{x}/{y}.png";
 	var osmAttrib='Map data © OpenStreetMap contributors';
 	var osm = new L.TileLayer(osmUrl, { minZoom: 1, maxZoom: 18, attribution: osmAttrib});		
 
@@ -382,6 +382,7 @@ function routeOnClick(e){
 		activeLayer.setStyle({opacity:defaultOpacity,weight:defaultWeight});
 	if (activeLayer==layer)	{
 		activeLayer=null;
+		activeRouteOsmId=null;
 		map.closePopup();
 	}
 	else {
@@ -390,7 +391,7 @@ function routeOnClick(e){
 		routeid=routeLayers.indexOf(layer);
 		var popup = L.popup();
 		popup.setLatLng(e.latlng);
-        popup.setContent(routes[routeid].htmlDescription);
+		popup.setContent(routes[routeid].htmlDescription);
 		activeRouteOsmId=routes[routeid].osm_id;
 		map.openPopup(popup);
 	}
