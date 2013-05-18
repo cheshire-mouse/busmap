@@ -65,7 +65,7 @@ function getRoutePopupHTML(route,withBusstops){
 	}
 	description+="</table>";
 	if (withBusstops){
-		description+="<div style=max-height:150px;overflow:auto>";
+		description+="<div style=height:150px;overflow:auto>";
 		for (var i in route.stops){
 			if (i>0) description+="<br>";
 			var stop_ind=route.stops[i].index;
@@ -78,7 +78,7 @@ function getRoutePopupHTML(route,withBusstops){
 	return description;
 }
 
-function getBusstopPopupHTML(stop,withRoutes=true){
+function getBusstopPopupHTML(stop,withRoutes){
 	console.debug("getBusstopPopupHTML");
 	var descr="";
 	if (stop.name!=null)
@@ -86,7 +86,7 @@ function getBusstopPopupHTML(stop,withRoutes=true){
 	console.debug("\tstop "+stop.name);
 	console.debug("\twithRoutes "+withRoutes.toString());
 	if (withRoutes){
-		descr+="<div style=max-height:300px;overflow:auto>";
+		descr+="<div style=height:200px;overflow:auto>";
 		for ( var i in stop.routes){
 			var route_ind=stop.routes[i].index;
 			var checked=stop.routes[i].isVisible?("checked"):("");
@@ -417,7 +417,7 @@ function activateRoute(layer,popupCoord){
 	else {
 		layer.setStyle({opacity:activeOpacity,weight:activeWeight});
 		routeid=routeLayers.indexOf(layer);
-		var popup = L.popup();
+		var popup = L.popup({autoPan:true});
 		popup.setLatLng(popupCoord);
 		popup.setContent(getRoutePopupHTML(routes[routeid],!autoRefresh));
 		activeRouteOsmId=routes[routeid].osm_id;
@@ -450,7 +450,7 @@ function activateBusstop(layer){
 	console.debug("activateBusstop");
 	var stopid=busstopLayers.indexOf(layer);
 	var stop=busstops[stopid];
-	var popup = L.popup();
+	var popup = L.popup({autoPan:true});
 	popup.setLatLng(layer.getLatLng());
 	popup.setContent(getBusstopPopupHTML(stop,!autoRefresh));
 	activeBusstop=stop;
