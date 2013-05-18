@@ -49,7 +49,7 @@ function initmap() {
 }
 
 //function getRouteDescriptionHTML(objRoute){
-function getRoutePopupHTML(route,withBusstops=true){
+function getRoutePopupHTML(route,withBusstops){
 	var fields=new Array();
 	fields.push({id:"ref",name:"Номер"});
 	fields.push({id:"from",name:"Откуда"});
