@@ -14,6 +14,7 @@ var xmlhttp=null;
 var activeLayer=null;
 var activeRouteOsmId=null;
 var busstopsAllowed=true;
+var openedPopupLatLnt=null;
 
 var visibleCount=0;
 var visibleRoutes=new Array();
@@ -406,6 +407,7 @@ function activateRoute(layer,popupCoord){
 		popup.setContent(getRoutePopupHTML(routes[routeid]));
 		activeRouteOsmId=routes[routeid].osm_id;
 		map.openPopup(popup);
+		openedPopupLatLng=popupCoord;
 	}
 }
 
@@ -418,8 +420,7 @@ function routeOnClick(e){
 function popupRouteOnClick(e){
 	var route_ind=e.target.attributes.value.value;
 	var layer=routeLayers[route_ind];
-	var popupCoord=layer.getBounds().getCenter();
-	map.setView(popupCoord,map.getZoom());
+	var popupCoord=openedPopupLatLng;
 	activateRoute(layer,popupCoord);
 	if (activeLayer==null) activateRoute(layer,popupCoord);
 }
@@ -431,6 +432,7 @@ function activateBusstop(layer){
 	popup.setLatLng(layer.getLatLng());
 	popup.setContent(getBusstopPopupHTML(stop));
 	map.openPopup(popup);
+	openedPopupLatLng=layer.getLatLng();
 }
 
 function busstopOnClick(e){
