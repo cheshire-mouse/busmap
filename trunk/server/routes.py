@@ -1,12 +1,6 @@
 #! /usr/bin/python
 # coding: utf-8
 
-#server part of the busmap
-#author: gryphon
-#license: WTFPL v.2
-#$Revision$
-#$Date$
-
 import psycopg2
 import json
 import db_config
@@ -49,7 +43,7 @@ def createJSON(routes,busstops,routes2busstops):
     return json.dumps(arResult);
 
 def getroutes(req):
-    req.log_error("test");
+    #req.log_error("test");
     fs=util.FieldStorage(req);
     bboxe=fs.getfirst("bboxe");
     bboxw=fs.getfirst("bboxw");
@@ -58,7 +52,8 @@ def getroutes(req):
     if (bboxe is None or bboxw is None or bboxn is None or bboxs is None):
         req.status=apache.HTTP_NOT_FOUND;
         return "This is a error"
-    polygon="POLYGON(({0} {1}, {2} {3}, {4} {5}, {6} {7}, {0} {1}))".format(
+    #polygon="POLYGON(({0} {1}, {2} {3}, {4} {5}, {6} {7}, {0} {1}))".format(
+    polygon="LINESTRING({0} {1}, {2} {3}, {4} {5}, {6} {7}, {0} {1})".format(
 	bboxe,bboxs,bboxe,bboxn,bboxw,bboxn,bboxw,bboxs)
     conn=psycopg2.connect(database=db_config.database,
                             user=db_config.user,
@@ -69,7 +64,9 @@ def getroutes(req):
         SELECT osm_id,name,ref,operator,"from","to",route,color,ST_AsGeoJSON(lines) 
             INTO TEMP tt_routes
 		FROM routes 
-		WHERE ST_GeomFromText(%s,4326) && lines 
+		-- WHERE ST_GeomFromText(s,4326) && lines 
+		WHERE ST_Intersects(ST_GeomFromText(%s,4326),lines) 
+             OR lines @ ST_GeomFromText(%s,4326)
 		;
         SELECT rb.route_id,busstop_id
             INTO TEMP tt_routes2busstops
@@ -78,7 +75,7 @@ def getroutes(req):
         ORDER BY id
         ;
         """
-        ,(polygon,));
+        ,(polygon,polygon));
     cur.execute("SELECT * FROM tt_routes;");
     routes=cur.fetchall();
     cur.execute("SELECT * FROM tt_routes2busstops;");
