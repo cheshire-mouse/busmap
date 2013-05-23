@@ -50,15 +50,17 @@ class PostGisWriter:
         self.conn.commit();
         return;
     def __initBuf(self):
-        self.__buf=dict(routes=dict(),nodes=dict(),waysNds=dict(),routesNodes=dict(),routesWays=dict());
+        self.__buf=dict(routes=dict(),stopAreas=dict(),nodes=dict(),
+            waysNds=dict(),relsNodes=dict(),relsWays=dict());
         buf=self.__buf;
         for elem in buf:
             buf[elem]["data"]=[];
         buf["routes"]["sql"]="INSERT INTO tmp_routes VALUES";
+        buf["stopAreas"]["sql"]="INSERT INTO tmp_stopareas VALUES";
         buf["nodes"]["sql"]="INSERT INTO tmp_nodes VALUES";
         buf["waysNds"]["sql"]="INSERT INTO tmp_waysnd (osm_id, nd_id) VALUES";
-        buf["routesNodes"]["sql"]="INSERT INTO tmp_routesnodes (route_id, node_id) VALUES";
-        buf["routesWays"]["sql"]="INSERT INTO tmp_routesways (route_id, way_id) VALUES";
+        buf["relsNodes"]["sql"]="INSERT INTO tmp_relsnodes (rel_id, node_id) VALUES";
+        buf["relsWays"]["sql"]="INSERT INTO tmp_relsways (rel_id, way_id) VALUES";
 
     def __writeData(self,dBuf):
         if len(dBuf)==0:
@@ -78,10 +80,17 @@ class PostGisWriter:
 
     def appendRoute(self,attribs,tags):
         data=(attribs["id"],);
-        for key in ["name","ref","operator","from","to","route","color"]:
+        for key in ["name","ref","operator","from","to","route","colour"]:
             data+=(tags[key],);
         strData=self.cursor.mogrify("(%s,%s,%s,%s,%s,%s,%s,%s)",data);
         self.__appendData(self.__buf["routes"],strData);
+
+    def appendStopArea(self,attribs,tags):
+        data=(attribs["id"],);
+        for key in ["name"]:
+            data+=(tags[key],);
+        strData=self.cursor.mogrify("(%s,%s)",data);
+        self.__appendData(self.__buf["stopAreas"],strData);
 
     def appendNode(self,attribs,tags):
         geomStr="POINT("+attribs["lon"]+" "+attribs["lat"]+")";
@@ -94,15 +103,15 @@ class PostGisWriter:
         strData=self.cursor.mogrify("(%s,%s)",data);
         self.__appendData(self.__buf["waysNds"],strData);
 
-    def appendRouteNode(self,route_id,node_id):
+    def appendRelNode(self,route_id,node_id):
         data=(route_id,node_id);
         strData=self.cursor.mogrify("(%s,%s)",data);
-        self.__appendData(self.__buf["routesNodes"],strData);
+        self.__appendData(self.__buf["relsNodes"],strData);
 
-    def appendRouteWay(self,route_id,way_id):
+    def appendRelWay(self,route_id,way_id):
         data=(route_id,way_id);
         strData=self.cursor.mogrify("(%s,%s)",data);
-        self.__appendData(self.__buf["routesWays"],strData);
+        self.__appendData(self.__buf["relsWays"],strData);
 
 class PgsqlTarget(PostGisWriter):
     __countNodes=0;
@@ -114,7 +123,7 @@ class PgsqlTarget(PostGisWriter):
             datetime.now(),self.__countNodes,self.__countWays,self.__countRels));
         if self.__finished:
             return
-        self.__timer=Timer(60,self.__printStat,());
+        self.__timer=Timer(6,self.__printStat,());
         self.__timer.start();
     def start(self, tag, attrib):
         if (tag=="osm"): 
@@ -134,23 +143,28 @@ class PgsqlTarget(PostGisWriter):
             self.__relid=attrib["id"];
             self.__attribs=dict(id=attrib["id"]);
             self.__tags=dict();
-            for key in ["name","ref","operator","from","to","route","color"]:
+            for key in ["name","ref","operator","from","to","route","colour","type","public_transport"]:
                 self.__tags[key]=None;
-        elif (tag=="member"):
+        elif (tag=="member" ):
             memtype=attrib["type"];
             ref=attrib["ref"];
-            if memtype=="way":
-                self.appendRouteWay(self.__relid,ref);
-            elif memtype=="node":
-                self.appendRouteNode(self.__relid,ref);
+            role=attrib["role"];
+            if (memtype=="way" and role in ["","forward","backward"]):
+                self.appendRelWay(self.__relid,ref);
+            elif (memtype=="node" and role in ["","stop"]):
+                self.appendRelNode(self.__relid,ref);
     def end(self, tag):
         if (tag=="node"):
             self.__countNodes+=1;
             self.appendNode(self.__attribs,self.__tags);
         elif (tag=="relation"):
             self.__countRels+=1;
-            if self.__tags["route"]=="bus":
-                self.appendRoute(self.__attribs,self.__tags);
+            if self.__tags["type"]=="route":
+                if self.__tags["route"] in ["bus","trolleybus","tram"]:
+                    self.appendRoute(self.__attribs,self.__tags);
+            elif (self.__tags["type"]=="public_transport" and 
+                    self.__tags["public_transport"]=="stop_area"):
+                self.appendStopArea(self.__attribs,self.__tags);
         elif (tag=="osm"):
             self.createResultTables();
             self.__finished=True;

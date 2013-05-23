@@ -13,8 +13,9 @@ DROP TABLE IF EXISTS
                         tmp_nodes, 
                         tmp_waysnd, 
                         tmp_routes, 
-                        tmp_routesways, 
-                        tmp_routesnodes;
+                        tmp_stopareas, 
+                        tmp_relsways, 
+                        tmp_relsnodes;
 CREATE TABLE tmp_nodes (osm_id BIGINT PRIMARY KEY,
                                              name TEXT,
                                              shelter TEXT,
@@ -34,20 +35,23 @@ CREATE TABLE tmp_routes (osm_id BIGINT PRIMARY KEY,
                                              route TEXT,
                                              color TEXT
         ); 
-CREATE TABLE tmp_routesways (
+CREATE TABLE tmp_stopareas(osm_id BIGINT PRIMARY KEY,
+                                             name TEXT
+        ); 
+CREATE TABLE tmp_relsways (
                         id BIGSERIAL PRIMARY KEY,
-                        route_id BIGINT NOT NULL,
+                        rel_id BIGINT NOT NULL,
                         way_id BIGINT NOT NULL 
         );
-CREATE INDEX tmp_routesways_route_id_index ON tmp_routesways(route_id);
-CREATE INDEX tmp_routesways_way_id_index ON tmp_routesways(way_id);
-CREATE TABLE tmp_routesnodes (
+CREATE INDEX tmp_relsways_rel_id_index ON tmp_relsways(rel_id);
+CREATE INDEX tmp_relsways_way_id_index ON tmp_relsways(way_id);
+CREATE TABLE tmp_relsnodes (
                         id BIGSERIAL PRIMARY KEY,
-                        route_id BIGINT NOT NULL, 
+                        rel_id BIGINT NOT NULL, 
                         node_id BIGINT NOT NULL
         );
-CREATE INDEX tmp_routesnodes_route_id_index ON tmp_routesnodes(route_id);
-CREATE INDEX tmp_routesnodes_node_id_index ON tmp_routesnodes(node_id);
+CREATE INDEX tmp_relsnodes_rel_id_index ON tmp_relsnodes(rel_id);
+CREATE INDEX tmp_relsnodes_node_id_index ON tmp_relsnodes(node_id);
 ''';
 
 sql_create_final_tables='''
@@ -82,27 +86,27 @@ CREATE INDEX r2b_bid_index ON routes2busstops (busstop_id);
 
 -- select nodes and ways from the routes
 
-SELECT rw.id, rw.way_id,rw.route_id 
-INTO TEMP tt_routesways
-FROM tmp_routes r JOIN tmp_routesways rw
-    ON (r.osm_id=rw.route_id)
+SELECT rw.id, rw.way_id,rw.rel_id 
+INTO TEMP tt_relsways
+FROM tmp_routes r JOIN tmp_relsways rw
+    ON (r.osm_id=rw.rel_id)
 ORDER BY rw.id;
 
-CREATE INDEX tt_routesways_id_index ON tt_routesways(id);
-CREATE INDEX tt_routesways_route_id_index ON tt_routesways(route_id);
+CREATE INDEX tt_relsways_id_index ON tt_relsways(id);
+CREATE INDEX tt_relsways_rel_id_index ON tt_relsways(rel_id);
 
-SELECT rn.id, rn.node_id,rn.route_id 
-INTO TEMP tt_routesnodes
-FROM tmp_routes r JOIN tmp_routesnodes rn
-    ON (r.osm_id=rn.route_id)
+SELECT rn.id, rn.node_id,rn.rel_id 
+INTO TEMP tt_relsnodes
+FROM tmp_routes r JOIN tmp_relsnodes rn
+    ON (r.osm_id=rn.rel_id)
 ORDER BY rn.id;
 
-CREATE INDEX tt_routesnodes_id_index ON tt_routesnodes(id);
-CREATE INDEX tt_routesnodes_route_id_index ON tt_routesnodes(route_id);
+CREATE INDEX tt_relsnodes_id_index ON tt_relsnodes(id);
+CREATE INDEX tt_relsnodes_rel_id_index ON tt_relsnodes(rel_id);
 
 SELECT w.id, w.osm_id, w.nd_id 
 INTO TEMP tt_waysnds
-FROM tmp_waysnd w JOIN tt_routesways rw
+FROM tmp_waysnd w JOIN tt_relsways rw
     ON (w.osm_id=rw.way_id)
 ORDER BY w.id;
 
@@ -119,26 +123,26 @@ WHERE osm_id IN (
     WHERE n.osm_id IS NULL) 
 ;
 
-DELETE FROM tt_routesways
-WHERE route_id IN (
-    SELECT DISTINCT route_id 
-    FROM tt_routesways rw LEFT OUTER JOIN tt_waysnds w
+DELETE FROM tt_relsways
+WHERE rel_id IN (
+    SELECT DISTINCT rel_id 
+    FROM tt_relsways rw LEFT OUTER JOIN tt_waysnds w
         ON (rw.way_id=w.osm_id)
     WHERE w.osm_id IS NULL) 
 ;
 
-DELETE FROM tt_routesnodes
-WHERE route_id IN (
-    SELECT DISTINCT route_id 
-    FROM tt_routesnodes rn LEFT OUTER JOIN tmp_nodes n
+DELETE FROM tt_relsnodes
+WHERE rel_id IN (
+    SELECT DISTINCT rel_id 
+    FROM tt_relsnodes rn LEFT OUTER JOIN tmp_nodes n
         ON (rn.node_id=n.osm_id)
     WHERE n.osm_id IS NULL) 
 ;
 
 DELETE FROM tmp_routes 
 WHERE osm_id NOT IN (
-    SELECT DISTINCT route_id 
-    FROM tt_routesways) 
+    SELECT DISTINCT rel_id 
+    FROM tt_relsways) 
 ;
 
 -- Union geometry
@@ -156,18 +160,18 @@ GROUP BY way_id
 
 CREATE INDEX tt_ways_way_id_index ON tt_ways(way_id);
 
-SELECT route_id, 
+SELECT rel_id, 
        ST_Simplify(ST_Multi(ST_LineMerge(ST_Collect(line))),0.00005) mline
 INTO TEMP tt_routesgeom
-FROM (SELECT route_id, line 
-    FROM tt_routesways rw JOIN tt_ways w
+FROM (SELECT rel_id, line 
+    FROM tt_relsways rw JOIN tt_ways w
     ON (rw.way_id=w.way_id)
     ORDER BY rw.id
     ) as rwl
-GROUP BY route_id
+GROUP BY rel_id
 ;
 
-CREATE INDEX tt_routesgeom_route_id ON tt_routesgeom (route_id);
+CREATE INDEX tt_routesgeom_rel_id ON tt_routesgeom (rel_id);
 
 -- write the result into permanent tables
 
@@ -178,24 +182,37 @@ DELETE FROM routes;
 INSERT INTO routes (
     SELECT osm_id,name,ref,operator,"from","to",route,color,mline 
     FROM tmp_routes r JOIN tt_routesgeom rg
-        ON (r.osm_id=rg.route_id)
+        ON (r.osm_id=rg.rel_id)
         );
 
 INSERT INTO busstops (
     SELECT osm_id,point,name,shelter
         FROM 	tmp_nodes n JOIN 
         (SELECT DISTINCT node_id 
-        FROM tt_routesnodes) as rn
+        FROM tt_relsnodes) as rn
         ON (n.osm_id=rn.node_id)
     );
 
 INSERT INTO routes2busstops (
-    SELECT id,route_id,node_id
-    FROM tmp_routesnodes rn JOIN routes r
-        ON (rn.route_id=r.osm_id)
+    SELECT id,rel_id,node_id
+    FROM tmp_relsnodes rn JOIN routes r
+        ON (rn.rel_id=r.osm_id)
         JOIN busstops b
         ON (b.osm_id=rn.node_id)
     );
+
+-- update stop names from stopareas
+
+SELECT rn.node_id as osm_id,sa.name
+INTO TEMP tt_stopnames
+FROM tt_relsnodes rn JOIN tmp_stopareas sa
+    ON (rn.rel_id=sa.osm_id);
+
+CREATE INDEX tt_stopnames_osm_id_index ON tt_stopnames(osm_id);
+
+UPDATE busstops SET name=sn.name
+FROM tt_stopnames as sn
+WHERE busstops.osm_id=sn.osm_id;
 
 '''
 sql_drop_tmp_tables='''
@@ -203,6 +220,7 @@ DROP TABLE IF EXISTS
                         tmp_nodes, 
                         tmp_waysnd, 
                         tmp_routes, 
-                        tmp_routesways, 
-                        tmp_routesnodes;
+                        tmp_stopareas, 
+                        tmp_relsways, 
+                        tmp_relsnodes;
 '''
