@@ -205,10 +205,23 @@ INSERT INTO routes2busstops (
 
 SELECT rn.node_id as osm_id,sa.name
 INTO TEMP tt_stopnames
-FROM tt_relsnodes rn JOIN tmp_stopareas sa
+FROM tmp_relsnodes rn JOIN tmp_stopareas sa
     ON (rn.rel_id=sa.osm_id);
 
 CREATE INDEX tt_stopnames_osm_id_index ON tt_stopnames(osm_id);
+
+SELECT osm_id
+INTO TEMP tt_stopnames_dups
+FROM (
+    SELECT osm_id,count(*) as cnt 
+    FROM tt_stopnames
+    GROUP BY osm_id) as tt_cnt
+WHERE cnt > 1;
+
+DELETE FROM tt_stopnames
+WHERE osm_id in (
+    SELECT osm_id FROM tt_stopnames_dups)
+;
 
 UPDATE busstops SET name=sn.name
 FROM tt_stopnames as sn
