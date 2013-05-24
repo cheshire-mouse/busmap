@@ -217,7 +217,8 @@ function requestRoutes() {
  	else {
 		return;
 	}
-	json_url='http://198.199.107.98/routes.py/getroutes?'+
+	//json_url='http://198.199.107.98/routes.py/getroutes?'+
+	json_url='http://postgis/routes.py/getroutes?'+
 		'bboxe='+bbox.E+'&bboxw='+bbox.W+'&bboxn='+bbox.N+'&bboxs='+bbox.S;
 	xmlhttp.open("GET",json_url,true);
 	xmlhttp.onreadystatechange=processJSON;
@@ -299,6 +300,7 @@ function addLayers(){
 	}
 	if (activeRoute!=null && map.hasLayer(activeRoute.layer))
 		activeRoute.layer.bringToFront();
+	bringBusstopsToFront();
 }
 
 function addAllBusstopLayers(){
@@ -311,6 +313,14 @@ function removeAllBusstopLayers(){
 	for (var i in busstops)
 		if ( busstops[i].visibleRoutes > 0 )
 			map.removeLayer(busstops[i].layer);
+}
+
+function bringBusstopsToFront(){
+	if (!busstopsAllowed) return;
+	for (var i in routes)
+		if ( routes[i].isVisible  )
+			for (var j in routes[i].stops)
+				routes[i].stops[j].layer.bringToFront();
 }
 
 function disableButtons(){
@@ -400,7 +410,6 @@ function chkAutorefreshOnChange(){
 }
 
 function activateRoute(layer,popupCoord){
-	layer.bringToFront();
 	if (activeRoute!=null) 
 		activeRoute.layer.setStyle({opacity:defaultOpacity,weight:defaultWeight});
 	if (activeRoute!=null && activeRoute.layer==layer)	{
@@ -410,6 +419,8 @@ function activateRoute(layer,popupCoord){
 	}
 	else {
 		layer.setStyle({opacity:activeOpacity,weight:activeWeight});
+		layer.bringToFront();
+		bringBusstopsToFront();
 		routeid=routeLayers.indexOf(layer);
 		var popup = L.popup();
 		popup.setLatLng(popupCoord);
