@@ -33,6 +33,8 @@ var cancelNextMapMoveEvent=false;
 
 function initmap() {
 	// set up the map
+	resizePage();
+	window.onresize=resizePage;
 	map = new L.Map('map');
 
 	// create the tile layer with correct attribution
@@ -217,8 +219,8 @@ function requestRoutes() {
  	else {
 		return;
 	}
-	//json_url='http://198.199.107.98/routes.py/getroutes?'+
-	json_url='http://postgis/routes.py/getroutes?'+
+	json_url='http://198.199.107.98/routes.py/getroutes?'+
+	//json_url='http://postgis/routes.py/getroutes?'+
 		'bboxe='+bbox.E+'&bboxw='+bbox.W+'&bboxn='+bbox.N+'&bboxs='+bbox.S;
 	xmlhttp.open("GET",json_url,true);
 	xmlhttp.onreadystatechange=processJSON;
@@ -499,6 +501,37 @@ function mapOnPopupClose(e){
 	//console.debug("mapOnPopupClose");
 	openedPopupLatLnt=null;
 	openedPopupType=null;
+}
+
+function resizePage(){
+	var height = 0;
+	var width = 0;
+	listWidth=250;
+	var body = window.document.body;
+	if (window.innerHeight) {
+		height = window.innerHeight;
+	} else if (body.parentElement.clientHeight) {
+		height = body.parentElement.clientHeight;
+	} else if (body && body.clientHeight) {
+		height = body.clientHeight;
+	}
+	if (window.innerWidth) {
+		width = window.innerWidth;
+	} else if (body.parentElement.clientWidth) {
+		width = body.parentElement.clientWidth;
+	} else if (body && body.clientWidth) {
+		width = body.clientWidth;
+	}
+	var divMap=document.getElementById("map");
+	var divList=document.getElementById("cellRoutesList");
+	console.debug(height);
+	console.debug(width);
+	height-=110;
+	width-=50;
+	divMap.style.height=height+"px";
+	divList.style.height=height+"px";
+	divMap.style.width=(width-listWidth)+"px";;
+	divList.style.width=listWidth+"px";
 }
 
 function updatePopupContent(popupAutoPan){
