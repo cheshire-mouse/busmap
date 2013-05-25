@@ -1,7 +1,7 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"> 
 <!--$Revision$-->
 <!--$Date$-->
-<html lang="en-US" xmlns="http://www.w3.org/1999/xhtml">
+<html lang="en-US" xmlns="http://www.w3.org/1999/xhtml" style="height:100%;">
 
 <head>
 	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
@@ -14,12 +14,20 @@
 	<script src="http://cdn.leafletjs.com/leaflet-0.5.1/leaflet.js"></script>
 	<script type="text/javascript" src="busmap.js"></script>
 </head>
-<body>
-<table>
+<style>
+table, td, tr, body {
+padding: 0;
+margin: 0;
+}
+</style>
+<body style="height: 100%;">
+<table id="tableMain" width="100%">
 <tr>
-<td vAlign="top">
-	<table>
+<td vAlign="top" id="cellLeft">
+	<table id="tableLeft">
 	<tr><td>
+		<label style="font: bold 38px courier;">Busmap</label>
+		<br>
 		<button id="btnRefresh" onclick="btnRefreshOnClick()">get routes</button>
 		<button id="btnCheckAll" onclick="btnCheckAllOnClick()">*</button>
 		<br>
@@ -29,13 +37,13 @@
 		<input type=checkbox id="chkAutorefresh" onclick="chkAutorefreshOnChange()">
 		<label>Autorefresh</label>
 	</td></tr>
-	<tr><td>
-		<div id="cellRoutesList" STYLE=" height: 500px; width: 200px; font-size: 12px; overflow: auto;">
+	<tr height=100%><td id="cellRoutesList">
+		<div id="divRoutesList" STYLE="font-size: 12px; overflow: auto;">
 		</div>
 	</td></tr>
 	</table>
 </td>
-<td><div id="map" style="width:1000px; height:500px;">
+<td id="cellMap" style="height:100%;" width=100%><div id="map" style="width:100px; height:50px;">
 	<script type="text/javascript">
 		initmap();
 	</script>

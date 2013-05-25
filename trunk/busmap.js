@@ -100,7 +100,7 @@ function getBusstopPopupHTML(stop,withRoutes){
 			descr+="<input type=checkbox "+checked+
 					" value="+route_ind+
 					" onchange=chkPopupOnChange(event) "+">"+
-					"<span style=color:"+stop.routes[i].color+">\u2588 </span>";
+					"<span style=color:"+stop.routes[i].colour+">\u2588 </span>";
 			descr+="<a onclick=popupRouteOnClick(event) value="+route_ind+">";
 			descr+=stop.routes[i].name;
 			descr+="</a>";
@@ -173,8 +173,8 @@ function processJSON(){
 	if (allVisible) visibleRoutes=new Array();
 	for ( var i in routes ) {
 		routes[i].index=i;
-		if (routes[i].color==null)  routes[i].color=generateColorFromRef(routes[i].ref);
-		if (routes[i].color==null)  routes[i].color=generateColorFromRef(routes[i].osm_id);
+		if (routes[i].colour==null)  routes[i].colour=generateColorFromRef(routes[i].ref);
+		if (routes[i].colour==null)  routes[i].colour=generateColorFromRef(routes[i].osm_id);
 		if (visibleRoutes[routes[i].osm_id]==true || allVisible){			
 			routes[i].isVisible=true;
 			visibleRoutes[routes[i].osm_id]=visibleRoutes[routes[i].osm_id]||allVisible;
@@ -229,7 +229,7 @@ function requestRoutes() {
 }
 
 function createCheckboxes(){
-	td=document.getElementById("cellRoutesList");
+	td=document.getElementById("divRoutesList");
 	while (td.firstChild) td.removeChild(td.firstChild);
 	
 	for (var i in routes){
@@ -240,7 +240,7 @@ function createCheckboxes(){
 		if (routes[i].isVisible) checkbox.checked=true;
 		checkbox.addEventListener("change",checkOnChange);
 		span=document.createElement("span");
-		span.style.color=routes[i].color;
+		span.style.color=routes[i].colour;
 		colorMarker=document.createTextNode("\u2588 ");
 		text=document.createTextNode(routes[i].name);
 		br=document.createElement('br');
@@ -257,7 +257,7 @@ function generateLayers(){
 	while(busstopLayers.length>0) map.removeLayer(busstopLayers.pop());
 	for (var i in routes){
 		mpline=new L.MultiPolyline(routes[i].lines.coordinates,
-				{color:routes[i].color,opacity:defaultOpacity,weight:defaultWeight});
+				{color:routes[i].colour,opacity:defaultOpacity,weight:defaultWeight});
 		//mpline.bindPopup(routes[i].name);
 		mpline.on('click',routeOnClick);
 		routeLayers[i]=mpline;
@@ -506,7 +506,7 @@ function mapOnPopupClose(e){
 function resizePage(){
 	var height = 0;
 	var width = 0;
-	listWidth=250;
+	var listWidth=250;
 	var body = window.document.body;
 	if (window.innerHeight) {
 		height = window.innerHeight;
@@ -523,15 +523,17 @@ function resizePage(){
 		width = body.clientWidth;
 	}
 	var divMap=document.getElementById("map");
-	var divList=document.getElementById("cellRoutesList");
-	console.debug(height);
-	console.debug(width);
-	height-=110;
-	width-=50;
-	divMap.style.height=height+"px";
-	divList.style.height=height+"px";
-	divMap.style.width=(width-listWidth)+"px";;
+	var divList=document.getElementById("divRoutesList");
+	var cellList=document.getElementById("cellRoutesList");
+	var cellLeft=document.getElementById("cellLeft");
+	var cellMap=document.getElementById("cellMap");
+	document.getElementById("tableMain").style.height=height+"px";
+	listWidth=Math.min(listWidth,width*0.25);
 	divList.style.width=listWidth+"px";
+	document.getElementById("tableLeft").style.height=cellLeft.clientHeight+"px";
+	divMap.style.height=cellMap.clientHeight+"px";
+	divMap.style.width=cellMap.clientWidth+"px";
+	divList.style.height=cellList.clientHeight+"px";
 }
 
 function updatePopupContent(popupAutoPan){
