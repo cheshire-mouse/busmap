@@ -23,9 +23,11 @@ def createJSON(routes,busstops,routes2busstops):
             if keysr[i]=="lines":
                 arResult["routes"][num][keysr[i]]=json.loads(rec[i]);
                 lines=arResult["routes"][num][keysr[i]]["coordinates"];
+                '''
                 for line in lines:
             	    for point in line:
             		point.reverse(); # leaflet
+                '''
             else:
                 arResult["routes"][num][keysr[i]]=rec[i];
         if arResult["routes"][num]["osm_id"] in routesstops:
@@ -36,7 +38,7 @@ def createJSON(routes,busstops,routes2busstops):
         for i in range(len(keysb)):
             if keysb[i]=="point":
                 arResult["busstops"][num][keysb[i]]=json.loads(rec[i]);
-                arResult["busstops"][num][keysb[i]]["coordinates"].reverse();                
+                #arResult["busstops"][num][keysb[i]]["coordinates"].reverse();                
             else:
                 arResult["busstops"][num][keysb[i]]=rec[i];
     #return json.dumps(arResult,indent=4);
@@ -81,7 +83,7 @@ def getroutes(req):
     cur.execute("SELECT * FROM tt_routes2busstops;");
     routes2busstops=cur.fetchall();
     cur.execute("""
-        SELECT osm_id,name,shelter,ST_AsGeoJSON(point) 
+        SELECT DISTINCT osm_id,name,shelter,ST_AsGeoJSON(point) 
         FROM busstops b JOIN tt_routes2busstops rb
         ON (b.osm_id=rb.busstop_id)
         ;
