@@ -8,8 +8,8 @@
 var map;
 var routes;
 var busstops;
-var routeLayers=new Array();
-var busstopLayers=new Array();
+//var routeLayers=new Array();
+//var busstopLayers=new Array();
 var xmlhttp=null;
 var activeRoute=null;
 var activeRouteOsmId=null;
@@ -31,6 +31,12 @@ var activeWeight=10;
 
 var cancelNextMapMoveEvent=false;
 
+var layerRoutes;
+var layerBusstops;
+
+var mapRoutes;
+var mapBusstops;
+
 function initmap() {
 	// set up the map
 	resizePage();
@@ -46,10 +52,10 @@ function initmap() {
 	//map.setView(new L.LatLng(0, 0),1);
 	map.locate({setView:true});
 	map.addLayer(osm);
-	chkAllowStopsOnChange();
-	chkAutorefreshOnChange();
+	//chkAllowStopsOnChange();
+	//chkAutorefreshOnChange();
 	document.addEventListener("routesupdateend",docOnRoutesUpdateEnd);
-	map.on('popupclose',mapOnPopupClose);
+	//map.on('popupclose',mapOnPopupClose);
 }
 
 function getRoutePopupHTML(route,withBusstops){
@@ -74,8 +80,8 @@ function getRoutePopupHTML(route,withBusstops){
 		description+="<div style=max-height:150px;overflow:auto>";
 		for (var i in route.stops){
 			if (i>0) description+="<br>";
-			var stop_ind=route.stops[i].index;
-			description+="<a onclick=popupBusstopOnClick(event) value="+stop_ind+">";
+			var stop_id=route.stops[i].osm_id;
+			description+="<a onclick=popupBusstopOnClick(event) value="+stop_id+">";
 			description+=(route.stops[i].name!=null)?(route.stops[i].name):("-???-");
 			description+="</a>";
 		}
@@ -94,14 +100,15 @@ function getBusstopPopupHTML(stop,withRoutes){
 	if (withRoutes){
 		descr+="<div style=max-height:200px;overflow:auto>";
 		for ( var i in stop.routes){
-			var route_ind=stop.routes[i].index;
+			var route_id=stop.routes[i].osm_id;
 			var checked=stop.routes[i].isVisible?("checked"):("");
 			if (i>0) descr+="<br>";
 			descr+="<input type=checkbox "+checked+
-					" value="+route_ind+
+					" id=popup_route_"+route_id+
+					" value="+route_id+
 					" onchange=chkPopupOnChange(event) "+">"+
-					"<span style=color:"+stop.routes[i].colour+">\u2588 </span>";
-			descr+="<a onclick=popupRouteOnClick(event) value="+route_ind+">";
+					"<span style=color:"+stop.routes[i].color+">\u2588 </span>";
+			descr+="<a onclick=popupRouteOnClick(event) value="+route_id+">";
 			descr+=stop.routes[i].name;
 			descr+="</a>";
 		}
@@ -155,13 +162,14 @@ function processJSON(){
 	var routesJson=JSON.parse(xmlhttp.responseText);
 
 	busstops=routesJson["busstops"];
-	var mapStops=new Array();
+	mapBusstops=new Object();
 	for (var i in busstops){
-		mapStops[busstops[i].osm_id]=busstops[i];
+		mapBusstops[busstops[i].osm_id]=busstops[i];
 		busstops[i].routes=new Array();
 		busstops[i].routesRefs=new Array();
 		busstops[i].visibleRoutes=0;
-		busstops[i].index=i;
+		busstops[i].point.properties=new Object();
+		busstops[i].point.properties.osm_id=busstops[i].osm_id;
 	}
 
 	routes=routesJson["routes"];
@@ -171,10 +179,11 @@ function processJSON(){
 	
 	visibleCount=0;
 	if (allVisible) visibleRoutes=new Array();
+	mapRoutes=new Object();
 	for ( var i in routes ) {
-		routes[i].index=i;
-		if (routes[i].colour==null)  routes[i].colour=generateColorFromRef(routes[i].ref);
-		if (routes[i].colour==null)  routes[i].colour=generateColorFromRef(routes[i].osm_id);
+		routes[i].lines.properties=new Object();
+		if (routes[i].color==null)  routes[i].color=generateColorFromRef(routes[i].ref);
+		if (routes[i].color==null)  routes[i].color=generateColorFromRef(routes[i].osm_id);
 		if (visibleRoutes[routes[i].osm_id]==true || allVisible){			
 			routes[i].isVisible=true;
 			visibleRoutes[routes[i].osm_id]=visibleRoutes[routes[i].osm_id]||allVisible;
@@ -184,17 +193,23 @@ function processJSON(){
 		var stops_ids=routes[i].stops_ids;
 		for (var s in stops_ids){
 			var s_id=stops_ids[s];
-			var stop=mapStops[s_id];
+			var stop=mapBusstops[s_id];
 			routes[i].stops.push(stop);
 			stop.routes.push(routes[i]);
 			if (routes[i].ref != null)
 				stop.routesRefs.push(routes[i].ref);
 		}
+		routes[i].popupContent=getRoutePopupHTML(routes[i],true);
+		routes[i].lines.properties.color=routes[i].color;
+		routes[i].lines.properties.osm_id=routes[i].osm_id;
+		mapRoutes[routes[i].osm_id]=routes[i];
 	}
 	if (routes.length==0) {
 		allVisible=true;
 		visibleRoutes=new Array();
 	}
+	for (var i in busstops)
+		busstops[i].popupContent=getBusstopPopupHTML(busstops[i],true);
 	createCheckboxes();
 	generateLayers();
 	addLayers();
@@ -219,8 +234,8 @@ function requestRoutes() {
  	else {
 		return;
 	}
-	json_url='http://198.199.107.98/routes.py/getroutes?'+
-	//json_url='http://postgis/routes.py/getroutes?'+
+	//json_url='http://198.199.107.98/routes.py/getroutes?'+
+	json_url='http://postgis/routes.py/getroutes?'+
 		'bboxe='+bbox.E+'&bboxw='+bbox.W+'&bboxn='+bbox.N+'&bboxs='+bbox.S;
 	xmlhttp.open("GET",json_url,true);
 	xmlhttp.onreadystatechange=processJSON;
@@ -235,12 +250,12 @@ function createCheckboxes(){
 	for (var i in routes){
 		var checkbox= document.createElement("input");
 		checkbox.type="checkbox";
-		checkbox.id="route"+i;
-		checkbox.value=i;
+		checkbox.id="route_"+routes[i].osm_id;
+		checkbox.value=routes[i].osm_id;
 		if (routes[i].isVisible) checkbox.checked=true;
 		checkbox.addEventListener("change",checkOnChange);
 		span=document.createElement("span");
-		span.style.color=routes[i].colour;
+		span.style.color=routes[i].color;
 		colorMarker=document.createTextNode("\u2588 ");
 		text=document.createTextNode(routes[i].name);
 		br=document.createElement('br');
@@ -253,56 +268,40 @@ function createCheckboxes(){
 }
 
 function generateLayers(){
-	while(routeLayers.length>0) map.removeLayer(routeLayers.pop());
-	while(busstopLayers.length>0) map.removeLayer(busstopLayers.pop());
+	layerRoutes=new L.GeoJSON([],{
+		onEachFeature: onEachRouteFeature	
+	});
 	for (var i in routes){
-		mpline=new L.MultiPolyline(routes[i].lines.coordinates,
-				{color:routes[i].colour,opacity:defaultOpacity,weight:defaultWeight});
-		//mpline.bindPopup(routes[i].name);
-		mpline.on('click',routeOnClick);
-		routeLayers[i]=mpline;
-		routes[i].layer=mpline;
-		if (activeRouteOsmId==routes[i].osm_id){
-			activeRoute=routes[i];
-			mpline.setStyle({opacity:activeOpacity,weight:activeWeight});
-		}
+		layerRoutes.addData(routes[i].lines);
 	}
+	layerBusstops=new L.GeoJSON([],{
+		pointToLayer: function(data,latlng){
+			return L.circleMarker(latlng);
+		},
+		onEachFeature: onEachBusstopFeature	
+	});
 	for (var i in busstops){
-		var latlon=new L.LatLng(busstops[i].point.coordinates[0],
-				busstops[i].point.coordinates[1]);
-		circle=new L.CircleMarker(latlon,{opacity:0.25});
-		circle.on('click',busstopOnClick);
-		busstopLayers[i]=circle;
-		busstops[i].layer=circle;
-		if (activeBusstopOsmId==busstops[i].osm_id){
-			activeBusstop=busstops[i];
-		}
+		layerBusstops.addData(busstops[i].point);
 	}
 }
 
+function onEachRouteFeature(data,layer){
+	layer.setStyle({color:data.properties.color});
+	var route=mapRoutes[data.properties.osm_id];
+	//layer.bindPopup(route.popupContent);
+	layer.on('click',routeOnClick);
+	route.layer=layer;
+}
+
+function onEachBusstopFeature(data,layer){
+	var busstop=mapBusstops[data.properties.osm_id];
+	layer.on('click',busstopOnClick);
+	busstop.layer=layer;
+}
+
 function addLayers(){
-	for (var i in routes){
-		checkbox=document.getElementById("route"+i);
-		if ( routes[i].isVisible && !map.hasLayer(routes[i].layer) ){
-			map.addLayer(routeLayers[i]);
-			for (var j in routes[i].stops){
-				var stop=routes[i].stops[j];
-				stop.visibleRoutes++;
-				if (stop.visibleRoutes==1 && busstopsAllowed) map.addLayer(stop.layer);
-			}
-		}
-		else if ( !routes[i].isVisible && map.hasLayer(routes[i].layer) ){
-			map.removeLayer(routeLayers[i]);
-			for (var j in routes[i].stops){
-				var stop=routes[i].stops[j];
-				stop.visibleRoutes--;
-				if (stop.visibleRoutes==0) map.removeLayer(stop.layer);
-			}
-		}
-	}
-	if (activeRoute!=null && map.hasLayer(activeRoute.layer))
-		activeRoute.layer.bringToFront();
-	bringBusstopsToFront();
+	map.addLayer(layerRoutes);
+	//map.addLayer(layerBusstops);
 }
 
 function addAllBusstopLayers(){
@@ -334,26 +333,43 @@ function enableButtons(){
 }
 
 function checkOnChange(e){
-	var r=e.target.value;
+	var routeid=e.target.value;
 	var isChecked=e.target.checked;
-	routes[r].isVisible=isChecked;
-	visibleRoutes[routes[r].osm_id]=isChecked;
-	if (isChecked) visibleCount++;
-	else visibleCount--;
-	allVisible=(visibleCount==routes.length);
-	addLayers();
+	var route=mapRoutes[routeid];
+	chkPopup=document.getElementById("popup_route_"+routeid);
+	if (chkPopup != null) chkPopup.checked=isChecked;
+	changeRouteVisibility(route,isChecked);
 }
 
 function chkPopupOnChange(e){
-	document.getElementById("route"+e.target.value).checked=e.target.checked;
-	checkOnChange(e);
+	var isChecked=e.target.checked;
+	var routeid=e.target.value;
+	var route=mapRoutes[routeid];
+	document.getElementById("route_"+routeid).checked=isChecked;
+	changeRouteVisibility(route,isChecked);
+}
+
+function changeRouteVisibility(route,isVisible){
+	route.isVisible=isVisible;
+	if (isVisible){
+		layerRoutes.addLayer(route.layer);
+		for (var i in route.stops)
+			layerBusstops.addLayer(route.stops[i].layer);
+	}
+	else {
+		layerRoutes.removeLayer(route.layer);
+		for (var i in route.stops)
+			layerBusstops.removeLayer(route.stops[i].layer);
+	}
 }
 
 function chkAllowStopsOnChange(){
 	var chk=document.getElementById("chkAllowStops")
 	busstopsAllowed=chk.checked;
-	if ( busstopsAllowed ) addAllBusstopLayers();
-	else  removeAllBusstopLayers();
+	//if ( busstopsAllowed ) addAllBusstopLayers();
+	//else  removeAllBusstopLayers();
+	if ( busstopsAllowed ) map.addLayer(layerBusstops);
+	else  map.removeLayer(layerBusstops);
 }
 
 function checkAll(){
@@ -412,31 +428,22 @@ function chkAutorefreshOnChange(){
 }
 
 function activateRoute(layer,popupCoord){
+	var routeid=layer.feature.properties.osm_id;
+	var route=mapRoutes[routeid];
 	if (activeRoute!=null) 
 		activeRoute.layer.setStyle({opacity:defaultOpacity,weight:defaultWeight});
-	if (activeRoute!=null && activeRoute.layer==layer)	{
-		activeRouteOsmId=null;
+	if (activeRoute!=null && activeRoute.osm_id==routeid)	{
 		activeRoute=null;
 		map.closePopup();
 	}
 	else {
 		layer.setStyle({opacity:activeOpacity,weight:activeWeight});
 		layer.bringToFront();
-		bringBusstopsToFront();
-		routeid=routeLayers.indexOf(layer);
 		var popup = L.popup();
 		popup.setLatLng(popupCoord);
-		popup.setContent(getRoutePopupHTML(routes[routeid],true));
-		activeRouteOsmId=routes[routeid].osm_id;
-		activeRoute=routes[routeid];
-		map.off('moveend',mapOnMoveend);
-		map.off('popupclose',mapOnPopupClose); // no need in clearing popup params
+		popup.setContent(route.popupContent);
+		activeRoute=route;
 		map.openPopup(popup);
-		map.on('popupclose',mapOnPopupClose);
-		openedPopupLatLng=popupCoord;
-		openedPopupType="route";
-		cancelNextMapMoveEvent=true;
-		if (autoRefresh) map.on('moveend',mapOnMoveend);
 	}
 }
 
@@ -455,27 +462,16 @@ function popupRouteOnClick(e){
 }
 
 function activateBusstop(layer){
-	//console.debug("activateBusstop");
-	var stopid=busstopLayers.indexOf(layer);
-	var stop=busstops[stopid];
+	var stopid=layer.feature.properties.osm_id;
+	var stop=mapBusstops[stopid];
 	var popup = L.popup();
 	popup.setLatLng(layer.getLatLng());
-	popup.setContent(getBusstopPopupHTML(stop,true));
-	activeBusstop=stop;
-	activeBusstopOsmId=stop.osm_id;
-	map.off('moveend',mapOnMoveend);
-	map.off('popupclose',mapOnPopupClose); // no need in clearing popup params
+	popup.setContent(stop.popupContent);
 	map.openPopup(popup);
-	map.on('popupclose',mapOnPopupClose);
-	openedPopupLatLng=layer.getLatLng();
-	openedPopupType="busstop";
-	//cancelNextMapMoveEvent=true;
-	if (autoRefresh) map.on('moveend',mapOnMoveend);
 }
 
 function busstopOnClick(e){
 	var layer=e.target;
-	cancelNextMapMoveEvent=true;
 	activateBusstop(layer);
 }
 function popupBusstopOnClick(e){
