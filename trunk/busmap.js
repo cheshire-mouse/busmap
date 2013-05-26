@@ -475,9 +475,8 @@ function busstopOnClick(e){
 	activateBusstop(layer);
 }
 function popupBusstopOnClick(e){
-	if (xmlhttp!=null) return;
-	var stop_ind=e.target.attributes.value.value;
-	var layer=busstopLayers[stop_ind];
+	var stopid=e.target.attributes.value.value;
+	var layer=mapBusstops[stopid].layer;
 	map.setView(layer.getLatLng(),map.getZoom());
 	activateBusstop(layer);
 }
