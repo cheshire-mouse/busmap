@@ -25,10 +25,10 @@ var visibleCount=0;
 //var visibleRoutes=new Array();
 //var allVisible=true;
 
-var defaultOpacity=0.5;
-var defaultWeight=5;
-var activeOpacity=1;
-var activeWeight=10;
+var defaultRouteStyle={opacity:0.5,weight:5};
+var activeRouteStyle={opacity:1,weight:10};
+var defaultBusstopStyle={opacity:0.5,fillOpacity:0.2,color:"blue",fillColor:"blue"};
+var activeBusstopStyle={opacity:1,fillOpacity:1,color:"blue",fillColor:"orange"};
 
 var cancelNextMapMoveEvent=false;
 
@@ -61,7 +61,7 @@ function initmap() {
 	});
 	layerBusstops=new L.GeoJSON([],{
 		pointToLayer: function(data,latlng){
-			return L.circleMarker(latlng);
+			return L.circleMarker(latlng,defaultBusstopStyle);
 		},
 		onEachFeature: onEachBusstopFeature	
 	});
@@ -235,10 +235,7 @@ function processJSON(){
 		busstops[i].popupContent=getBusstopPopupHTML(busstops[i],true);
 	for (var i in routes)
 		addRouteToLayer(routes[i]);
-	if (activeRouteFound) {
-		activeRoute.layer.setStyle({opacity:activeOpacity,weight:activeWeight});
-		activeRoute.layer.bringToFront();
-	}
+	if (activeRouteFound) setRouteStyle(activeRoute,true);
 	else activeRoute=null;
 	addLayers();
 	createCheckboxes();
@@ -430,35 +427,53 @@ function chkAutorefreshOnChange(){
 	else map.off('moveend',mapOnMoveend);
 }
 
-function activateRoute(layer,popupCoord){
-	var routeid=layer.feature.properties.osm_id;
-	var route=mapRoutes[routeid];
+function activateRoute(route,popupCoord){
+	var layer=route.layer;
 	if (activeRoute!=null) 
-		activeRoute.layer.setStyle({opacity:defaultOpacity,weight:defaultWeight});
-	if (activeRoute!=null && activeRoute.osm_id==routeid)	{
+		setRouteStyle(activeRoute,false);
+	if (activeRoute!=null && activeRoute.osm_id==route.osm_id)	{
 		activeRoute=null;
 		map.closePopup();
 	}
 	else {
-		layer.setStyle({opacity:activeOpacity,weight:activeWeight});
-		layer.bringToFront();
+		setRouteStyle(route,true);
 		activeRoute=route;
 		openPopup(popupCoord,route.popupContent,"route",true);
+	}
+}
+
+function setRouteStyle(route,active){
+	var busstopStyle,routeStyle; 
+	if (active){
+		routeStyle=activeRouteStyle;
+		busstopStyle=activeBusstopStyle;
+	}
+	else{
+		routeStyle=defaultRouteStyle;
+		busstopStyle=defaultBusstopStyle;
+	}
+	route.layer.setStyle(routeStyle);
+	if (active) route.layer.bringToFront();
+	for (var i in route.stops) {
+		route.stops[i].layer.setStyle(busstopStyle);
+		if (active && busstopsAllowed)
+			route.stops[i].layer.bringToFront();
 	}
 }
 
 function routeOnClick(e){
 	var layer=e.target;
 	var popupCoord=e.latlng;
-	activateRoute(layer,popupCoord);
+	var routeid=layer.feature.properties.osm_id;
+	activateRoute(mapRoutes[routeid],popupCoord);
 }
 
 function popupRouteOnClick(e){
 	var route_ind=e.target.attributes.value.value;
-	var layer=mapRoutes[route_ind].layer;
+	var route=mapRoutes[route_ind];
 	var popupCoord=openedPopupLatLng;
-	activateRoute(layer,popupCoord);
-	if (activeRoute==null) activateRoute(layer,popupCoord);
+	activateRoute(route,popupCoord);
+	if (activeRoute==null) activateRoute(route,popupCoord);
 }
 
 function activateBusstop(layer){
