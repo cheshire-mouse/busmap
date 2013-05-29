@@ -1,6 +1,16 @@
 #! /usr/bin/python
 # coding: utf-8
 
+# server part of the bussmap
+#       arguments: bbox coords
+#       returns: json with the routes and busstops
+# requires mod_python
+#author: gryphon
+#license: WTFPL v.2
+#$Revision$
+#$Date$
+#$HeadURL$
+
 import psycopg2
 import json
 import db_config
