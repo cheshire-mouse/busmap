@@ -238,6 +238,7 @@ function processJSON(){
 	if (activeRouteFound) setRouteStyle(activeRoute,true);
 	else activeRoute=null;
 	addLayers();
+	if (busstopsAllowed) layerBusstops.bringToFront();
 	createCheckboxes();
 	enableButtons();
 	xmlhttp=null;
@@ -304,6 +305,7 @@ function onEachBusstopFeature(data,layer){
 	var busstop=mapBusstops[data.properties.osm_id];
 	layer.on('click',busstopOnClick);
 	busstop.layer=layer;
+	layer.bindLabel(busstop.name,{noHide:true});
 }
 
 function addLayers(){
@@ -376,7 +378,10 @@ function chkAllowStopsOnChange(){
 	busstopsAllowed=chk.checked;
 	//if ( busstopsAllowed ) addAllBusstopLayers();
 	//else  removeAllBusstopLayers();
-	if ( busstopsAllowed ) map.addLayer(layerBusstops);
+	if ( busstopsAllowed ) {
+		map.addLayer(layerBusstops);
+		layerBusstops.bringToFront();
+	}
 	else  map.removeLayer(layerBusstops);
 }
 
