@@ -235,10 +235,10 @@ function processJSON(){
 		busstops[i].popupContent=getBusstopPopupHTML(busstops[i],true);
 	for (var i in routes)
 		addRouteToLayer(routes[i]);
-	if (activeRouteFound) setRouteStyle(activeRoute,true);
-	else activeRoute=null;
 	addLayers();
 	if (busstopsAllowed) layerBusstops.bringToFront();
+	if (activeRouteFound) setRouteStyle(activeRoute,true);
+	else activeRoute=null;
 	createCheckboxes();
 	enableButtons();
 	xmlhttp=null;
