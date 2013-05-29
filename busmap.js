@@ -18,7 +18,7 @@ var activeBusstop=null;
 var busstopsAllowed=true;
 var openedPopupLatLng=null;
 var openedPopupType=null;
-var openedPopup=null;
+//var openedPopup=null;
 var autoRefresh=false;
 
 var visibleCount=0;
@@ -47,7 +47,9 @@ function initmap() {
 	// create the tile layer with correct attribution
 	var osmUrl='http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
 	//var osmUrl="http://{s}.www.toolserver.org/tiles/bw-mapnik/{z}/{x}/{y}.png";
-	var osmAttrib='Map data © OpenStreetMap contributors';
+	var osmAttrib='Map data © '+
+		'<a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'+
+		' contributors';
 	var osm = new L.TileLayer(osmUrl, { minZoom: 1, maxZoom: 18, attribution: osmAttrib});		
 
 	//map.setView(new L.LatLng(0, 0),1);
@@ -186,19 +188,24 @@ function processJSON(){
 
 	busstops=routesJson["busstops"];
 	mapBusstops=new Object();
+	var activeBusstopFound=false;
 	for (var i in busstops){
 		mapBusstops[busstops[i].osm_id]=busstops[i];
 		busstops[i].routes=new Array();
 		busstops[i].visibleRoutes=0;
 		busstops[i].point.properties=new Object();
 		busstops[i].point.properties.osm_id=busstops[i].osm_id;
-		if (activeBusstop!=null && busstops[i].osm_id==activeBusstop.osm_id)
+		if (activeBusstop!=null && busstops[i].osm_id==activeBusstop.osm_id){
 			activeBusstop=busstops[i];
+			activeBusstopFound=true;
+		}
 	}
+	if (!activeBusstopFound) activeBusstop=null;
 
 	routes=routesJson["routes"];
 	
 	mapRoutes=new Object();
+	var activeRouteFound=false;
 	for ( var i in routes ) {
 		routes[i].name=getRouteName(routes[i]);
 		if (routes[i].color==null)  routes[i].color=generateColorFromRef(routes[i].ref);
@@ -218,18 +225,21 @@ function processJSON(){
 		routes[i].lines.properties.color=routes[i].color;
 		routes[i].lines.properties.osm_id=routes[i].osm_id;
 		mapRoutes[routes[i].osm_id]=routes[i];
-		if (activeRoute!=null && routes[i].osm_id==activeRoute.osm_id)
+		if (activeRoute!=null && routes[i].osm_id==activeRoute.osm_id){
 			activeRoute=routes[i];
+			activeRouteFound=true;
+		}
 	}
 	routes.sort(compareRoutes);
 	for (var i in busstops)
 		busstops[i].popupContent=getBusstopPopupHTML(busstops[i],true);
 	for (var i in routes)
 		addRouteToLayer(routes[i]);
-	if (activeRoute!=null) {
+	if (activeRouteFound) {
 		activeRoute.layer.setStyle({opacity:activeOpacity,weight:activeWeight});
 		activeRoute.layer.bringToFront();
 	}
+	else activeRoute=null;
 	addLayers();
 	createCheckboxes();
 	enableButtons();
@@ -462,16 +472,14 @@ function openPopup(latlng,popupContent,type,autoPan){
 	//console.debug("openPopup");
 	var oldBounds=map.getBounds();
 	map.closePopup();
-	var popup = L.popup();
+	var popup = L.popup({autoPan:autoPan});
 	openedPopupLatLng=latlng;
 	openedPopupType=type;
-	openedPopup=popup;
-	popup.autoPan=autoPan;
 	popup.setLatLng(latlng);
 	popup.setContent(popupContent);
 	map.openPopup(popup);
 	if ( !oldBounds.equals(map.getBounds()) ) cancelNextMapMoveEvent=true; 
-	//console.debug("\t"+oldBounds.equals(map.getBounds()) );
+	//console.debug("\tsame bounds"+oldBounds.equals(map.getBounds()) );
 }
 
 function busstopOnClick(e){
@@ -497,10 +505,10 @@ function mapOnMoveend(e){
 }
 
 function mapOnPopupClose(e){
-	console.debug("mapOnPopupClose");
+	//console.debug("mapOnPopupClose");
 	openedPopupLatLng=null;
 	openedPopupType=null;
-	openedPopup=null;
+	//openedPopup=null;
 }
 
 function resizePage(){
@@ -539,16 +547,23 @@ function resizePage(){
 }
 
 function updatePopupContent(){
-	console.debug("updatePopupContent");
+	//console.debug("updatePopupContent");
 	if (openedPopupType==null) return;
-	var content="";
-	if (openedPopupType=="route") content=activeRoute.popupContent;
-	if (openedPopupType=="busstop") content=activeBusstop.popupContent;
-	console.debug("\topen");
-	openPopup(openedPopupLanLng,content,openedPopupType,false);
+	var activeObject=null;
+	if (openedPopupType=="route") activeObject=activeRoute;
+	if (openedPopupType=="busstop") activeObject=activeBusstop;
+	if (activeObject==null){
+		map.closePopup();
+		return;
+	}
+	var content=activeObject.popupContent;
+	//console.debug("\topen");
+	openPopup(openedPopupLatLng,content,openedPopupType,false);
+	//console.debug("end updatePopupContent");
 }
 
 function docOnRoutesUpdateEnd(e){
 	//console.debug("docOnRoutesUpdateEnd");
 	updatePopupContent();
+	//console.debug("end docOnRoutesUpdateEnd");
 }
