@@ -7,6 +7,7 @@
 #license: WTFPL v.2
 #$Revision$
 #$Date$
+#$HeadURL$
 
 import sys;
 from lxml import etree;

@@ -3,6 +3,7 @@
 // license: WTFPL v.2
 // $Revision$
 // $Date$
+// $HeadURL$
 
 
 var map;
