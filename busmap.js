@@ -329,6 +329,7 @@ function checkOnChange(e){
 	chkPopup=document.getElementById("popup_route_"+routeid);
 	if (chkPopup != null) chkPopup.checked=isChecked;
 	setRouteVisibility(route,isChecked);
+	if (isChecked) moveActiveRouteToFront();
 }
 
 function chkPopupOnChange(e){
@@ -337,6 +338,7 @@ function chkPopupOnChange(e){
 	var route=mapRoutes[routeid];
 	document.getElementById("route_"+routeid).checked=isChecked;
 	setRouteVisibility(route,isChecked);
+	if (isChecked) moveActiveRouteToFront();
 }
 
 function addRouteToLayer(route){
@@ -381,7 +383,7 @@ function chkAllowStopsOnChange(){
 	//else  removeAllBusstopLayers();
 	if ( busstopsAllowed ) {
 		map.addLayer(layerBusstops);
-		layerBusstops.bringToFront();
+		moveActiveRouteToFront();
 	}
 	else  map.removeLayer(layerBusstops);
 }
@@ -394,6 +396,17 @@ function checkAll(){
 		chkPopup=document.getElementById("popup_route_"+routes[i].osm_id);
 		if (chkPopup != null) chkPopup.checked=visible;
 		setRouteVisibility(routes[i],visible);
+	}
+	moveActiveRouteToFront();
+}
+
+function moveActiveRouteToFront(){
+	if (activeRoute==null || !activeRoute.isVisible) return;
+	activeRoute.layer.bringToFront();
+	if (busstopsAllowed){
+		layerBusstops.bringToFront();
+		for (var i in activeRoute.stops)
+			activeRoute.stops[i].layer.bringToFront();
 	}
 }
 
@@ -442,8 +455,8 @@ function activateRoute(route,popupCoord){
 		map.closePopup();
 	}
 	else {
-		setRouteStyle(route,true);
 		activeRoute=route;
+		setRouteStyle(route,true);
 		openPopup(popupCoord,route.popupContent,"route",true);
 	}
 }
@@ -459,12 +472,9 @@ function setRouteStyle(route,active){
 		busstopStyle=defaultBusstopStyle;
 	}
 	route.layer.setStyle(routeStyle);
-	if (active) route.layer.bringToFront();
-	for (var i in route.stops) {
+	for (var i in route.stops) 
 		route.stops[i].layer.setStyle(busstopStyle);
-		if (active && busstopsAllowed)
-			route.stops[i].layer.bringToFront();
-	}
+	moveActiveRouteToFront();
 }
 
 function routeOnClick(e){
