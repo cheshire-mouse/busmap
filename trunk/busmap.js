@@ -281,15 +281,20 @@ function createCheckboxes(){
 		checkbox.value=routes[i].osm_id;
 		if (routes[i].isVisible) checkbox.checked=true;
 		checkbox.addEventListener("change",checkOnChange);
-		span=document.createElement("span");
+		var span=document.createElement("span");
 		span.style.color=routes[i].color;
 		colorMarker=document.createTextNode("\u2588 ");
-		text=document.createTextNode(routes[i].name);
-		br=document.createElement('br');
+		var text=document.createTextNode(routes[i].name);
+		var href=document.createElement("a");
+		href.textContent=routes[i].name;
+		href.addEventListener("click",listRouteOnClick);
+		href.value=routes[i].osm_id;
+		var br=document.createElement('br');
 		span.appendChild(colorMarker);
 		td.appendChild(checkbox);
 		td.appendChild(span);
-		td.appendChild(text);
+		//td.appendChild(text);
+		td.appendChild(href);
 		td.appendChild(br);
 	}
 }
@@ -488,6 +493,15 @@ function popupRouteOnClick(e){
 	var route_ind=e.target.attributes.value.value;
 	var route=mapRoutes[route_ind];
 	var popupCoord=openedPopupLatLng;
+	activateRoute(route,popupCoord);
+	if (activeRoute==null) activateRoute(route,popupCoord);
+}
+
+function listRouteOnClick(e){
+	var route_id=e.target.value;
+	var route=mapRoutes[route_id];
+	var popupCoord=route.layer.getBounds().getCenter();
+	map.setView(popupCoord,map.getZoom());
 	activateRoute(route,popupCoord);
 	if (activeRoute==null) activateRoute(route,popupCoord);
 }
