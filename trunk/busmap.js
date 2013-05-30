@@ -222,6 +222,8 @@ function processJSON(){
 			stop.routes.push(routes[i]);
 		}
 		routes[i].popupContent=getRoutePopupHTML(routes[i],true);
+		console.debug(routes[i].name);
+		routes[i].lines.coordinates=mergeLines(routes[i].lines.coordinates);
 		routes[i].lines.properties=new Object();
 		routes[i].lines.properties.color=routes[i].color;
 		routes[i].lines.properties.osm_id=routes[i].osm_id;
@@ -413,6 +415,41 @@ function moveActiveRouteToFront(){
 		for (var i in activeRoute.stops)
 			activeRoute.stops[i].layer.bringToFront();
 	}
+}
+
+//merge adjucent lines in the array of lines
+//result is still array of lines (if there are no gaps
+//it will contain only one element)
+function mergeLines(arLines){
+        console.debug("mergeLines, in: "+arLines.length);
+        if (arLines.length<2) return arLines;
+        var arMergedLines=new Array();
+        for (var i=0;i<arLines.length-1;i++){
+                ar1first=arLines[i][0];
+                ar1last=arLines[i][arLines[i].length-1];
+                ar2first=arLines[i+1][0];
+                ar2last=arLines[i+1][arLines[i+1].length-1];
+                if ( pairsEqual(ar1first,ar2first) ) arLines[i].reverse();
+                else if ( pairsEqual(ar1last,ar2last) ) arLines[i+1].reverse();
+                else if ( pairsEqual(ar1first,ar2last) ) {
+                        arLines[i].reverse();
+                        arLines[i+1].reverse();
+                }
+                ar2first=arLines[i+1][0];
+                ar1last=arLines[i][arLines[i].length-1];
+                if ( pairsEqual(ar2first,ar1last) ){
+                        arLines[i].pop();
+                        arLines[i+1]=arLines[i].concat(arLines[i+1]);
+                }
+                else arMergedLines.push(arLines[i]);
+        }
+        arMergedLines.push(arLines[arLines.length-1]);
+        console.debug("mergeLines, out: "+arMergedLines.length);
+        return arMergedLines;
+} 
+
+function pairsEqual(a,b){
+	return ( a[0] == b[0] && a[1] == b[1] );
 }
 
 function compareRoutes(a,b){
