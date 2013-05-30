@@ -509,6 +509,12 @@ function openPopup(latlng,popupContent,type,autoPan){
 	popup.setLatLng(latlng);
 	popup.setContent(popupContent);
 	map.openPopup(popup);
+	//sync routes' checkboxes state
+	if (openedPopupType=="busstop") 
+		for (var i in activeBusstop.routes){
+			var route=activeBusstop.routes[i];
+			document.getElementById("popup_route_"+route.osm_id).checked=route.isVisible;	
+		}
 	if ( !oldBounds.equals(map.getBounds()) ) cancelNextMapMoveEvent=true; 
 	//console.debug("\tsame bounds"+oldBounds.equals(map.getBounds()) );
 }
@@ -588,9 +594,7 @@ function updatePopupContent(){
 		return;
 	}
 	var content=activeObject.popupContent;
-	//console.debug("\topen");
 	openPopup(openedPopupLatLng,content,openedPopupType,false);
-	//console.debug("end updatePopupContent");
 }
 
 function docOnRoutesUpdateEnd(e){
