@@ -104,7 +104,7 @@ ORDER BY rn.id;
 CREATE INDEX tt_relsnodes_id_index ON tt_relsnodes(id);
 CREATE INDEX tt_relsnodes_rel_id_index ON tt_relsnodes(rel_id);
 
-SELECT w.id, w.osm_id, w.nd_id 
+SELECT DISTINCT w.id, w.osm_id, w.nd_id 
 INTO TEMP tt_waysnds
 FROM tmp_waysnd w JOIN tt_relsways rw
     ON (w.osm_id=rw.way_id)
@@ -161,7 +161,7 @@ GROUP BY way_id
 CREATE INDEX tt_ways_way_id_index ON tt_ways(way_id);
 
 SELECT rel_id, 
-       ST_Simplify(ST_Multi(ST_LineMerge(ST_Collect(line))),0.00005) mline
+       ST_Simplify(ST_Multi(ST_LineMerge(ST_Union(line))),0.00005) mline
 INTO TEMP tt_routesgeom
 FROM (SELECT rel_id, line 
     FROM tt_relsways rw JOIN tt_ways w

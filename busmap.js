@@ -602,7 +602,9 @@ function mapOnPopupClose(e){
 function resizePage(){
 	var height = 0;
 	var width = 0;
-	var listWidth=250;
+	var listWidthPx=250;
+	var listWidthPercents=0.25;
+	var padding=10;
 	var body = window.document.body;
 	if (window.innerHeight) {
 		height = window.innerHeight;
@@ -620,18 +622,16 @@ function resizePage(){
 	}
 	var divMap=document.getElementById("map");
 	var divList=document.getElementById("divRoutesList");
-	var cellList=document.getElementById("cellRoutesList");
-	var cellLeft=document.getElementById("cellLeft");
-	var cellMap=document.getElementById("cellMap");
-	divMap.style.height="0px";
-	divMap.style.width="0px";
-	document.getElementById("tableMain").style.height=height+"px";
-	listWidth=Math.min(listWidth,width*0.25);
+	var divControls=document.getElementById("divControls");
+	var listWidth=Math.min(listWidthPx,width*listWidthPercents);
+	divControls.style.width=listWidth+"px";
+	controlsHeight=divControls.offsetHeight;
 	divList.style.width=listWidth+"px";
-	document.getElementById("tableLeft").style.height=cellLeft.clientHeight+"px";
-	divMap.style.height=cellMap.clientHeight+"px";
-	divMap.style.width=cellMap.clientWidth+"px";
-	divList.style.height=cellList.clientHeight+"px";
+	divList.style.height=(height-controlsHeight-padding*4)+"px";
+	divList.style.top=(controlsHeight+1)+"px";
+	divMap.style.width=(width-listWidth-padding*2)+"px";
+	divMap.style.height=height+"px";
+	divMap.style.left=(listWidth+padding*2+1)+"px";
 }
 
 function updatePopupContent(){
