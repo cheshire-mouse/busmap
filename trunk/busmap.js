@@ -411,7 +411,7 @@ function moveActiveRouteToFront(){
 	if (activeRoute==null || !activeRoute.isVisible) return;
 	activeRoute.layer.bringToFront();
 	if (busstopsAllowed){
-		layerBusstops.bringToFront();
+		//layerBusstops.bringToFront();
 		for (var i in activeRoute.stops)
 			activeRoute.stops[i].layer.bringToFront();
 	}
@@ -516,7 +516,8 @@ function setRouteStyle(route,active){
 	route.layer.setStyle(routeStyle);
 	for (var i in route.stops) 
 		route.stops[i].layer.setStyle(busstopStyle);
-	moveActiveRouteToFront();
+	if (active) moveActiveRouteToFront();
+	else if (busstopsAllowed) layerBusstops.bringToFront();
 }
 
 function routeOnClick(e){
