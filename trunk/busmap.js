@@ -184,6 +184,7 @@ function processJSON(){
 		for (var i in routes)
 			if (routes[i].isVisible) mapVisibleRoutes[routes[i].osm_id]=true;
 	visibleCount=0;
+	setRouteStyle(activeRoute,false);
 	layerRoutes.clearLayers();
 	layerBusstops.clearLayers();
 
@@ -222,7 +223,7 @@ function processJSON(){
 			stop.routes.push(routes[i]);
 		}
 		routes[i].popupContent=getRoutePopupHTML(routes[i],true);
-		console.debug(routes[i].name);
+		//console.debug(routes[i].name);
 		routes[i].lines.coordinates=mergeLines(routes[i].lines.coordinates);
 		routes[i].lines.properties=new Object();
 		routes[i].lines.properties.color=routes[i].color;
@@ -410,18 +411,18 @@ function checkAll(){
 function moveActiveRouteToFront(){
 	if (activeRoute==null || !activeRoute.isVisible) return;
 	activeRoute.layer.bringToFront();
-	if (busstopsAllowed){
+	//if (busstopsAllowed){
 		//layerBusstops.bringToFront();
 		for (var i in activeRoute.stops)
 			activeRoute.stops[i].layer.bringToFront();
-	}
+	//}
 }
 
 //merge adjucent lines in the array of lines
 //result is still array of lines (if there are no gaps
 //it will contain only one element)
 function mergeLines(arLines){
-        console.debug("mergeLines, in: "+arLines.length);
+        //console.debug("mergeLines, in: "+arLines.length);
         if (arLines.length<2) return arLines;
         var arMergedLines=new Array();
         for (var i=0;i<arLines.length-1;i++){
@@ -444,7 +445,7 @@ function mergeLines(arLines){
                 else arMergedLines.push(arLines[i]);
         }
         arMergedLines.push(arLines[arLines.length-1]);
-        console.debug("mergeLines, out: "+arMergedLines.length);
+        //console.debug("mergeLines, out: "+arMergedLines.length);
         return arMergedLines;
 } 
 
@@ -504,6 +505,7 @@ function activateRoute(route,popupCoord){
 }
 
 function setRouteStyle(route,active){
+	if (route==null) return;
 	var busstopStyle,routeStyle; 
 	if (active){
 		routeStyle=activeRouteStyle;
@@ -514,8 +516,11 @@ function setRouteStyle(route,active){
 		busstopStyle=defaultBusstopStyle;
 	}
 	route.layer.setStyle(routeStyle);
-	for (var i in route.stops) 
+	for (var i in route.stops) {
 		route.stops[i].layer.setStyle(busstopStyle);
+		if (!busstopsAllowed && active) map.addLayer(route.stops[i].layer);
+		if (!busstopsAllowed && !active) map.removeLayer(route.stops[i].layer);
+	}
 	if (active) moveActiveRouteToFront();
 	else if (busstopsAllowed) layerBusstops.bringToFront();
 }
