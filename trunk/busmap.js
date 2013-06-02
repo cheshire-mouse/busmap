@@ -475,6 +475,7 @@ function activateRoute(route,popupCoord){
 	var layer=route.layer;
 	if (activeRoute!=null){ 
 		setRouteStyle(activeRoute,false);
+		updateBusstopsLabels(route,false);
 		removeActiveRouteBusstopsLayers();
 		if (busstopsAllowed) layerBusstops.bringToFront();
 	}
@@ -485,9 +486,19 @@ function activateRoute(route,popupCoord){
 	else {
 		activeRoute=route;
 		setRouteStyle(route,true);
+		updateBusstopsLabels(route,true);
 		addActiveRouteBusstopsLayers();
 		moveActiveRouteToFront();
 		if (popupCoord!=null) openPopup(popupCoord,route.popupContent,"route",true);
+	}
+}
+
+function updateBusstopsLabels(route,withIndex){
+	for (var i in route.stops){
+		var content=route.stops[i].name;
+		var index=parseInt(i)+1;
+		if (withIndex) content=index.toString()+". "+content;
+		route.stops[i].layer.updateLabelContent(content);
 	}
 }
 
