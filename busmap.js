@@ -644,7 +644,7 @@ function resizePage(){
 function updatePopupContent(){
 	if (openedPopupType==null) return;
 	var activeObject=null;
-	if (openedPopupType=="route") activeObject=activeRoute;
+	if (openedPopupType=="route") activeObject=null;
 	if (openedPopupType=="busstop") activeObject=activeBusstop;
 	if (activeObject==null){
 		map.closePopup();
