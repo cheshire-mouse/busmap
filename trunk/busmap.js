@@ -494,7 +494,7 @@ function activateRoute(route,popupCoord){
 }
 
 function updateBusstopsLabels(route,withIndex){
-	for (var i in route.stops){
+	for (var i=route.stops.length-1;i--;i>=0){
 		var content=route.stops[i].name;
 		var index=parseInt(i)+1;
 		if (withIndex) content=index.toString()+". "+content;
