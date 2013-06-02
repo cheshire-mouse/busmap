@@ -69,6 +69,7 @@ function getRoutePopupHTML(route,withBusstops){
 	fields.push({id:"ref",name:"Номер"});
 	fields.push({id:"from",name:"Откуда"});
 	fields.push({id:"to",name:"Куда"});
+	fields.push({id:"route",name:"Тип"});
 	fields.push({id:"operator",name:"Владелец"});
 	var description="";
 	if (route.name!=null) description +="<h3>"+route.name+"</h3>";
@@ -189,7 +190,7 @@ function processJSON(){
 	routes=routesJson["routes"];
 	
 	mapRoutes=new Object();
-	var activeRouteFound=false;
+	var newActiveRoute=null;
 	for ( var i in routes ) {
 		routes[i].name=getRouteName(routes[i]);
 		if (routes[i].color==null)  routes[i].color=generateColorFromRef(routes[i].ref);
@@ -211,10 +212,8 @@ function processJSON(){
 		routes[i].lines.properties.color=routes[i].color;
 		routes[i].lines.properties.osm_id=routes[i].osm_id;
 		mapRoutes[routes[i].osm_id]=routes[i];
-		if (activeRoute!=null && routes[i].osm_id==activeRoute.osm_id){
-			activeRoute=routes[i];
-			activeRouteFound=true;
-		}
+		if (activeRoute!=null && routes[i].osm_id==activeRoute.osm_id)
+			newActiveRoute=routes[i];
 	}
 	routes.sort(compareRoutes);
 	for (var i in busstops)
@@ -223,8 +222,8 @@ function processJSON(){
 		addRouteToLayer(routes[i]);
 	addLayers();
 	if (busstopsAllowed) layerBusstops.bringToFront();
-	if (activeRouteFound) activeRoute(activeRoute,null);
-	else activeRoute=null;
+	activeRoute=null;
+	if (newActiveRoute!=null) activateRoute(newActiveRoute,null);
 	createCheckboxes();
 	enableButtons();
 	xmlhttp=null;
@@ -245,8 +244,8 @@ function requestRoutes() {
  	else {
 		return;
 	}
-	//json_url='http://198.199.107.98/routes.py/getroutes?'+
-	json_url='http://postgis/routes.py/getroutes?'+
+	json_url='http://198.199.107.98/routes.py/getroutes?'+
+	//json_url='http://postgis/routes.py/getroutes?'+
 		'bboxe='+bbox.E+'&bboxw='+bbox.W+'&bboxn='+bbox.N+'&bboxs='+bbox.S;
 	xmlhttp.open("GET",json_url,true);
 	xmlhttp.onreadystatechange=processJSON;
@@ -285,7 +284,9 @@ function onEachRouteFeature(data,layer){
 	layer.setStyle({color:data.properties.color});
 	var route=mapRoutes[data.properties.osm_id];
 	layer.on('click',routeOnClick);
+	layer.on('contextmenu',routeOnContextmenu);
 	route.layer=layer;
+	layer.bindLabel(route.name);
 }
 
 function onEachBusstopFeature(data,layer){
@@ -526,7 +527,16 @@ function routeOnClick(e){
 	var layer=e.target;
 	var popupCoord=e.latlng;
 	var routeid=layer.feature.properties.osm_id;
-	activateRoute(mapRoutes[routeid],popupCoord);
+	//activateRoute(mapRoutes[routeid],popupCoord);
+	map.closePopup();
+	activateRoute(mapRoutes[routeid],null);
+}
+
+function routeOnContextmenu(e){
+	var layer=e.target;
+	var popupCoord=e.latlng;
+	var routeid=layer.feature.properties.osm_id;
+	openPopup(popupCoord,mapRoutes[routeid].popupContent,"route",true);
 }
 
 function popupRouteOnClick(e){
