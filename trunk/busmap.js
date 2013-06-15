@@ -292,6 +292,7 @@ function onEachRouteFeature(data,layer){
 function onEachBusstopFeature(data,layer){
 	var busstop=mapBusstops[data.properties.osm_id];
 	layer.on('click',busstopOnClick);
+	layer.on('contextmenu',busstopOnClick);
 	busstop.layer=layer;
 	layer.bindLabel(busstop.name,{noHide:true});
 }
