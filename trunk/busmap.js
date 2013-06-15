@@ -473,11 +473,10 @@ function chkAutorefreshOnChange(){
 }
 
 function activateRoute(route,popupCoord){
-	console.debug("activateRoutes "+route.name+" "+popupCoord);
 	var layer=route.layer;
 	if (activeRoute!=null){ 
 		setRouteStyle(activeRoute,false);
-		updateBusstopsLabels(activeRoute,false);
+		updateBusstopsIndexes(activeRoute,false);
 		removeActiveRouteBusstopsLayers();
 		if (busstopsAllowed) layerBusstops.bringToFront();
 	}
@@ -488,20 +487,24 @@ function activateRoute(route,popupCoord){
 	else {
 		activeRoute=route;
 		setRouteStyle(route,true);
-		updateBusstopsLabels(route,true);
 		addActiveRouteBusstopsLayers();
+		updateBusstopsIndexes(route,true);
 		moveActiveRouteToFront();
 		if (popupCoord!=null) openPopup(popupCoord,route.popupContent,"route",true);
 	}
 }
 
-function updateBusstopsLabels(route,withIndex){
-	console.debug("updateBusstopsLabels "+route.name+" with index: "+withIndex);
+function updateBusstopsIndexes(route,withIndex){
 	for (var i=route.stops.length-1;i>=0;i--){
-		var content=route.stops[i].name;
 		var index=parseInt(i)+1;
-		if (withIndex) content=index.toString()+". "+content;
-		route.stops[i].layer.updateLabelContent(content);
+		if (withIndex){ 
+			route.stops[i].layer.bindInnerLabel(index.toString());
+			route.stops[i].layer.showInnerLabel();
+		}
+		else {
+			route.stops[i].layer.hideInnerLabel();
+			route.stops[i].layer.unbindInnerLabel(index.toString());
+		}
 	}
 }
 
