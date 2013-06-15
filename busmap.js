@@ -497,13 +497,10 @@ function activateRoute(route,popupCoord){
 function updateBusstopsIndexes(route,withIndex){
 	for (var i=route.stops.length-1;i>=0;i--){
 		var index=parseInt(i)+1;
+		route.stops[i].layer.unbindInnerLabel();
 		if (withIndex){ 
 			route.stops[i].layer.bindInnerLabel(index.toString());
 			route.stops[i].layer.showInnerLabel();
-		}
-		else {
-			route.stops[i].layer.hideInnerLabel();
-			route.stops[i].layer.unbindInnerLabel(index.toString());
 		}
 	}
 }
