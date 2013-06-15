@@ -148,6 +148,8 @@ L.CircleMarker.include({
 
 		if (!this._showInnerLabelAdded) {
 			this.showInnerLabel();
+			this.on('add', this.showInnerLabel, this);
+			this.on('remove', this.hideInnerLabel, this);
 			this._showInnerLabelAdded = true;
 		}
 
@@ -158,6 +160,8 @@ L.CircleMarker.include({
 		if (this._innerlabel) {
 			this.hideInnerLabel();
 			this._innerlabel = null;
+			this.off('add', this.showInnerLabel, this);
+			this.off('remove', this.hideInnerLabel, this);
 			this._showInnerLabelAdded = false;
 		}
 		return this;
@@ -170,11 +174,13 @@ L.CircleMarker.include({
 	},
 
 	showInnerLabel: function () {
+		if (!this._showInnerLabelAdded) return; 
 		this._innerlabel.setLatLng(this._latlng);
 		this._map.showInnerLabel(this._innerlabel);
 	},
 		   
 	hideInnerLabel: function () {
+		if (!this._showInnerLabelAdded) return; 
 		this._innerlabel.close();
 	}
 		    
