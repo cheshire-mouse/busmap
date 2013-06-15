@@ -539,8 +539,10 @@ function routeOnClick(e){
 	var popupCoord=e.latlng;
 	var routeid=layer.feature.properties.osm_id;
 	//activateRoute(mapRoutes[routeid],popupCoord);
+	layer.unbindLabel();
 	map.closePopup();
 	activateRoute(mapRoutes[routeid],null);
+	layer.bindLabel(mapRoutes[routeid].name);
 }
 
 function routeOnContextmenu(e){
