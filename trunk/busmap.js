@@ -206,7 +206,7 @@ function processJSON(){
 			stop.routes.push(routes[i]);
 		}
 		routes[i].popupContent=getRoutePopupHTML(routes[i],true);
-		console.debug(routes[i].name);
+		//console.debug(routes[i].name);
 		routes[i].lines.coordinates=mergeLines(routes[i].lines.coordinates);
 		routes[i].lines.properties=new Object();
 		routes[i].lines.properties.color=routes[i].color;
@@ -404,7 +404,7 @@ function moveActiveRouteToFront(){
 //result is still array of lines (if there are no gaps
 //it will contain only one element)
 function mergeLines(arLines){
-        console.debug("mergeLines, in: "+arLines.length);
+        //console.debug("mergeLines, in: "+arLines.length);
         if (arLines.length<2) return arLines;
         var arMergedLines=new Array();
         for (var i=0;i<arLines.length-1;i++){
@@ -427,7 +427,7 @@ function mergeLines(arLines){
                 else arMergedLines.push(arLines[i]);
         }
         arMergedLines.push(arLines[arLines.length-1]);
-        console.debug("mergeLines, out: "+arMergedLines.length);
+        //console.debug("mergeLines, out: "+arMergedLines.length);
         return arMergedLines;
 } 
 
@@ -472,16 +472,17 @@ function chkAutorefreshOnChange(){
 }
 
 function activateRoute(route,popupCoord){
+	console.debug("activateRoutes "+route.name+" "+popupCoord);
 	var layer=route.layer;
 	if (activeRoute!=null){ 
 		setRouteStyle(activeRoute,false);
-		updateBusstopsLabels(route,false);
+		updateBusstopsLabels(activeRoute,false);
 		removeActiveRouteBusstopsLayers();
 		if (busstopsAllowed) layerBusstops.bringToFront();
 	}
 	if (activeRoute!=null && activeRoute.osm_id==route.osm_id)	{
 		activeRoute=null;
-		map.closePopup();
+		//map.closePopup();
 	}
 	else {
 		activeRoute=route;
@@ -494,7 +495,8 @@ function activateRoute(route,popupCoord){
 }
 
 function updateBusstopsLabels(route,withIndex){
-	for (var i=route.stops.length-1;i--;i>=0){
+	console.debug("updateBusstopsLabels "+route.name+" with index: "+withIndex);
+	for (var i=route.stops.length-1;i>=0;i--){
 		var content=route.stops[i].name;
 		var index=parseInt(i)+1;
 		if (withIndex) content=index.toString()+". "+content;
@@ -538,11 +540,11 @@ function routeOnClick(e){
 	var layer=e.target;
 	var popupCoord=e.latlng;
 	var routeid=layer.feature.properties.osm_id;
-	//activateRoute(mapRoutes[routeid],popupCoord);
+	//hideLabel doesn't work, so create new label to make it hide
 	layer.unbindLabel();
+	layer.bindLabel(mapRoutes[routeid].name);
 	map.closePopup();
 	activateRoute(mapRoutes[routeid],null);
-	layer.bindLabel(mapRoutes[routeid].name);
 }
 
 function routeOnContextmenu(e){
@@ -556,8 +558,8 @@ function popupRouteOnClick(e){
 	var route_ind=e.target.attributes.value.value;
 	var route=mapRoutes[route_ind];
 	var popupCoord=openedPopupLatLng;
-	activateRoute(route,popupCoord);
-	if (activeRoute==null) activateRoute(route,popupCoord);
+	activateRoute(route,null);
+	//if (activeRoute==null) activateRoute(route,null);
 }
 
 function listRouteOnClick(e){
@@ -565,8 +567,8 @@ function listRouteOnClick(e){
 	var route=mapRoutes[route_id];
 	var popupCoord=route.layer.getBounds().getCenter();
 	map.setView(popupCoord,map.getZoom());
-	activateRoute(route,popupCoord);
-	if (activeRoute==null) activateRoute(route,popupCoord);
+	activateRoute(route,null);
+	if (activeRoute==null) activateRoute(route,null);
 }
 
 function activateBusstop(layer){
