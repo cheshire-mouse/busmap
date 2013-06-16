@@ -152,7 +152,7 @@ class PgsqlTarget(PostGisWriter):
             role=attrib["role"];
             if (memtype=="way" and role in ["","forward","backward"]):
                 self.appendRelWay(self.__relid,ref);
-            elif (memtype=="node" and role in ["","stop"]):
+            elif (memtype=="node" and role in ["","stop","stop_exit_only","stop_entry_only"]):
                 self.appendRelNode(self.__relid,ref);
     def end(self, tag):
         if (tag=="node"):
