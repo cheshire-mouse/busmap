@@ -1,3 +1,10 @@
+/*
+   InnerLabel style
+
+$Revision$
+$Date$
+$HeadURL$
+*/
 .leaflet-innerlabel {
 	/*background: rgb(235, 235, 235);*/
 	background: rgba(235, 235, 235, 0.0);
