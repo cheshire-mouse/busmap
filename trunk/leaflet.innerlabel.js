@@ -1,7 +1,7 @@
 /*
-	Leaflet.innerlabel, a plugin that adds innerlabels to circle markers for Leaflet powered maps.
-		based on Leaflet.innerlabel by Jacob Toye, Smartrak
-		https://github.com/Leaflet/Leaflet.innerlabel
+	Leaflet.innerlabel, a plugin that adds innerlabels to Leaflet circle markers.
+		most of the code is snatched from Leaflet.Label by Jacob Toye, Smartrak
+		https://github.com/Leaflet/Leaflet.label
 
 	$Revision$
 	$Date$
@@ -24,7 +24,8 @@ L.InnerLabel = L.Popup.extend({
 	onAdd: function (map) {
 		this._map = map;
 
-		this._pane = this._source instanceof L.Marker ? map._panes.markerPane : map._panes.popupPane;
+		//this._pane = this._source instanceof L.Marker ? map._panes.markerPane : map._panes.popupPane;
+		this._pane = map._panes.markerPane;
 
 		if (!this._container) {
 			this._initLayout();
