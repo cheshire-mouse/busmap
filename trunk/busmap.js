@@ -32,6 +32,12 @@ var layerBusstops;
 var mapRoutes;
 var mapBusstops;
 
+var transportIcons={
+	bus:"img/bus.png",
+	trolleybus:"img/trolleybus.png",
+	tram:"img/tram.png"
+};
+
 function initmap() {
 	// set up the map
 	resizePage();
@@ -69,10 +75,11 @@ function getRoutePopupHTML(route,withBusstops){
 	fields.push({id:"ref",name:"Номер"});
 	fields.push({id:"from",name:"Откуда"});
 	fields.push({id:"to",name:"Куда"});
-	fields.push({id:"route",name:"Тип"});
+	//fields.push({id:"route",name:"Тип"});
 	fields.push({id:"operator",name:"Владелец"});
 	var description="";
-	if (route.name!=null) description +="<h3>"+route.name+"</h3>";
+	var iconTag="<img src='"+transportIcons[route["route"]]+"' />";
+	if (route.name!=null) description +="<h3>"+iconTag+" "+route.name+"</h3>";
 	description+="<table>";
 	for (var i in fields){
 		if (route[fields[i].id]!=null) 
