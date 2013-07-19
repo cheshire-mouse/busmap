@@ -54,6 +54,78 @@ CREATE INDEX tmp_relsnodes_rel_id_index ON tmp_relsnodes(rel_id);
 CREATE INDEX tmp_relsnodes_node_id_index ON tmp_relsnodes(node_id);
 ''';
 
+sql_create_tmp_tables_nodes='''
+CREATE TEMP TABLE tmp_nodes_buf ( LIKE tmp_nodes INCLUDING DEFAULTS); 
+''';
+
+sql_create_tmp_tables_ways='''
+CREATE TEMP TABLE tmp_waysnd_buf ( LIKE tmp_waysnd INCLUDING DEFAULTS); 
+CREATE INDEX tmp_waysnd_buf_osm_id_index ON tmp_waysnd_buf(osm_id);
+''';
+
+sql_create_tmp_tables_members='''
+CREATE TEMP TABLE tmp_relsways_buf ( LIKE tmp_relsways INCLUDING DEFAULTS); 
+CREATE INDEX tmp_relsways_buf_rel_id_index ON tmp_relsways_buf(rel_id);
+CREATE INDEX tmp_relsways_buf_way_id_index ON tmp_relsways_buf(way_id);
+CREATE TEMP TABLE tmp_relsnodes_buf ( LIKE tmp_relsnodes INCLUDING DEFAULTS);
+CREATE INDEX tmp_relsnodes_buf_rel_id_index ON tmp_relsnodes_buf(rel_id);
+CREATE INDEX tmp_relsnodes_buf_node_id_index ON tmp_relsnodes_buf(node_id);
+''';
+
+sql_finalize_nodes='''
+INSERT INTO tmp_nodes (
+        SELECT *
+        FROM tmp_nodes_buf 
+            WHERE osm_id IN (
+                SELECT DISTINCT nd_id FROM tmp_waysnd
+                )
+        ) 
+;
+DELETE FROM tmp_nodes_buf;
+''';
+
+sql_finalize_waysnd='''
+INSERT INTO tmp_waysnd (
+        SELECT *
+        FROM tmp_waysnd_buf 
+            WHERE osm_id IN (
+                SELECT DISTINCT way_id FROM tmp_relsways
+                )
+        )
+;
+DELETE FROM tmp_waysnd_buf;
+''';
+
+sql_finalize_relsnodes='''
+INSERT INTO tmp_relsnodes (
+        SELECT *
+        FROM tmp_relsnodes_buf 
+            WHERE rel_id IN (
+                SELECT DISTINCT rel_id FROM tmp_routes
+                UNION
+                SELECT DISTINCT osm_id FROM tmp_stopareas
+                )
+        )
+;
+DELETE FROM tmp_relsnodes_buf;
+''';
+
+sql_finalize_relsways='''
+INSERT INTO tmp_relsways (
+        SELECT *
+        FROM tmp_relsways_buf 
+            WHERE rel_id IN (
+                SELECT DISTINCT rel_id FROM tmp_routes
+                UNION
+                SELECT DISTINCT osm_id FROM tmp_stopareas
+                ) 
+        )
+;
+DELETE FROM tmp_relsways_buf;
+''';
+
+
+
 sql_create_final_tables='''
 -- create empty tables
 
