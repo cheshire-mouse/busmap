@@ -63,14 +63,19 @@ CREATE TEMP TABLE tmp_waysnd_buf ( LIKE tmp_waysnd INCLUDING DEFAULTS);
 CREATE INDEX tmp_waysnd_buf_osm_id_index ON tmp_waysnd_buf(osm_id);
 ''';
 
-sql_create_tmp_tables_members='''
-CREATE TEMP TABLE tmp_relsways_buf ( LIKE tmp_relsways INCLUDING DEFAULTS); 
-CREATE INDEX tmp_relsways_buf_rel_id_index ON tmp_relsways_buf(rel_id);
-CREATE INDEX tmp_relsways_buf_way_id_index ON tmp_relsways_buf(way_id);
+sql_create_tmp_tables_relsnodes='''
 CREATE TEMP TABLE tmp_relsnodes_buf ( LIKE tmp_relsnodes INCLUDING DEFAULTS);
 CREATE INDEX tmp_relsnodes_buf_rel_id_index ON tmp_relsnodes_buf(rel_id);
 CREATE INDEX tmp_relsnodes_buf_node_id_index ON tmp_relsnodes_buf(node_id);
 ''';
+
+sql_create_tmp_tables_relsways='''
+CREATE TEMP TABLE tmp_relsways_buf ( LIKE tmp_relsways INCLUDING DEFAULTS); 
+CREATE INDEX tmp_relsways_buf_rel_id_index ON tmp_relsways_buf(rel_id);
+CREATE INDEX tmp_relsways_buf_way_id_index ON tmp_relsways_buf(way_id);
+''';
+
+sql_create_tmp_tables_members=sql_create_tmp_tables_relsnodes + sql_create_tmp_tables_relsways;
 
 sql_finalize_nodes='''
 INSERT INTO tmp_nodes (
@@ -81,8 +86,8 @@ INSERT INTO tmp_nodes (
                 )
         ) 
 ;
-DELETE FROM tmp_nodes_buf;
-''';
+DROP TABLE tmp_nodes_buf;
+'''+sql_create_tmp_tables_nodes;
 
 sql_finalize_waysnd='''
 INSERT INTO tmp_waysnd (
@@ -93,12 +98,12 @@ INSERT INTO tmp_waysnd (
                 )
         )
 ;
-DELETE FROM tmp_waysnd_buf;
-''';
+DROP TABLE tmp_waysnd_buf;
+'''+sql_create_tmp_tables_ways;
 
 sql_finalize_relsnodes='''
-INSERT INTO tmp_relsnodes (
-        SELECT *
+INSERT INTO tmp_relsnodes (rel_id, node_id) (
+        SELECT rel_id, node_id
         FROM tmp_relsnodes_buf 
             WHERE rel_id IN (
                 SELECT DISTINCT rel_id FROM tmp_routes
@@ -107,12 +112,12 @@ INSERT INTO tmp_relsnodes (
                 )
         )
 ;
-DELETE FROM tmp_relsnodes_buf;
-''';
+DROP TABLE tmp_relsnodes_buf;
+'''+sql_create_tmp_tables_relsnodes;
 
 sql_finalize_relsways='''
-INSERT INTO tmp_relsways (
-        SELECT *
+INSERT INTO tmp_relsways (rel_id,way_id) (
+        SELECT rel_id, way_id
         FROM tmp_relsways_buf 
             WHERE rel_id IN (
                 SELECT DISTINCT rel_id FROM tmp_routes
@@ -121,8 +126,8 @@ INSERT INTO tmp_relsways (
                 ) 
         )
 ;
-DELETE FROM tmp_relsways_buf;
-''';
+DROP TABLE tmp_relsways_buf;
+'''+sql_create_tmp_tables_relsways;
 
 
 
