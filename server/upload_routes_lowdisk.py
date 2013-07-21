@@ -88,6 +88,7 @@ class PostGisWriter(object):
         if (dBuf["finalize"]!=None):
             self.cursor.execute(dBuf["finalize"]);
         dBuf["data"]=[];
+        self.commit();
 
     def flushBuffer(self):
         for key in self.__buf:
@@ -141,6 +142,7 @@ class PgsqlTarget(PostGisWriter):
     __countRels=0;
     __finished=False;
     __mode=None;
+    __tags=dict();
     def __init__(self,mode,dbname,host=None,user=None,password=None):
         super(PgsqlTarget,self).__init__(dbname,host,user,password);
         self.__mode=mode;
@@ -157,37 +159,39 @@ class PgsqlTarget(PostGisWriter):
             datetime.now(),self.__countNodes,self.__countWays,self.__countRels));
         if self.__finished:
             return
-        self.__timer=Timer(6,self.__printStat,());
-        self.__timer.start();
+        #self.__timer=Timer(6,self.__printStat,());
+        #self.__timer.start();
     def start(self, tag, attrib):
-        if (tag=="osm"): 
-            print("parsing XML");
-            self.__printStat();
-        if (tag=="node"): 
+        if (tag=="node" and self.__mode=="nodes"): 
             self.__attribs=dict(lat=attrib["lat"],lon=attrib["lon"],id=attrib["id"]);
             self.__tags=dict(name=None,shelter=None);
-        elif (tag=="tag"):
-            self.__tags[attrib["k"]]=attrib["v"];
-        elif (tag=="way"):
-            self.__countWays+=1;
-            self.__wayid=attrib["id"];
         elif (tag=="nd" and self.__mode=="ways"):
             self.appendWayNd(self.__wayid,attrib["ref"]);
-        elif (tag=="relation"):
+        elif (tag=="member" and self.__mode=="members"):
+            memtype=attrib["type"];
+            ref=attrib["ref"];
+            role=attrib["role"];
+            if (memtype=="way" and role in ["","forward","backward"]):
+                self.appendRelWay(self.__relid,ref);
+            elif (memtype=="node" and role in ["","stop","stop_exit_only","stop_entry_only"]):
+                self.appendRelNode(self.__relid,ref);
+        elif (tag=="tag" and self.__mode in ["rels","nodes"]):
+            self.__tags[attrib["k"]]=attrib["v"];
+        elif (tag=="way" and self.__mode=="ways"):
+            #self.__countWays+=1;
+            self.__wayid=attrib["id"];
+        elif (tag=="relation" and self.__mode=="members"):
+            self.__relid=attrib["id"];
+        elif (tag=="relation" and self.__mode=="rels"):
             self.__relid=attrib["id"];
             self.__attribs=dict(id=attrib["id"]);
             self.__tags=dict();
             for key in ["name","ref","operator","from","to","route","colour","type","public_transport"]:
                 self.__tags[key]=None;
-        elif (tag=="member" ):
-            memtype=attrib["type"];
-            ref=attrib["ref"];
-            role=attrib["role"];
-            if (self.__mode=="members" and memtype=="way" and role in ["","forward","backward"]):
-                self.appendRelWay(self.__relid,ref);
-            elif (self.__mode=="members" and memtype=="node" and 
-                    role in ["","stop","stop_exit_only","stop_entry_only"]):
-                self.appendRelNode(self.__relid,ref);
+        elif (tag=="osm"): 
+            print("parsing XML");
+            #self.__printStat();
+ 
     def end(self, tag):
         if (self.__mode=="nodes" and tag=="node"):
             self.__countNodes+=1;
@@ -206,7 +210,7 @@ class PgsqlTarget(PostGisWriter):
                 self.createResultTables();
             self.commit();
             self.__finished=True;
-            self.__timer.cancel();
+            #self.__timer.cancel();
         return;
     def data(self, data):
         return
