@@ -16,11 +16,13 @@ from lxml import etree;
 import psycopg2;
 from threading import Timer;
 from datetime import datetime;
+import logging;
 
 import db_config;
 import sql_queries;
 
-#flXml="./bus.osm";
+logging.basicConfig(level=logging.DEBUG,format="%(asctime)s %(levelname)s %(message)s");
+logger=logging.getLogger(__name__);
 
 class PostGisWriter(object):
     __bufSize=100000;
@@ -37,27 +39,27 @@ class PostGisWriter(object):
         self.cursor=self.conn.cursor();
         self.__initBuf();
     def __del__(self):
-        print("destructor");
+        logger.info("destructor");
         self.conn.commit();
         self.cursor.close();
         self.conn.close();
     def createTmpTables(self):
-        print("creating temp tables");
+        logger.info("creating temp tables");
         self.cursor.execute(sql_queries.sql_create_tmp_tables);
     def createTmpTablesNodes(self):
-        print("creating temp tables (nodes)");
+        logger.info("creating temp tables (nodes)");
         self.cursor.execute(sql_queries.sql_create_tmp_tables_nodes);
     def createTmpTablesWays(self):
-        print("creating temp tables (ways)");
+        logger.info("creating temp tables (ways)");
         self.cursor.execute(sql_queries.sql_create_tmp_tables_ways);
     def createTmpTablesMembers(self):
-        print("creating temp tables (members)");
+        logger.info("creating temp tables (members)");
         self.cursor.execute(sql_queries.sql_create_tmp_tables_members);
     def createResultTables(self):
         self.flushBuffer();
-        print("creating result tables");
+        logger.info("creating result tables");
         self.cursor.execute(sql_queries.sql_create_final_tables);
-        print ("created");
+        logger.info ("created");
         self.cursor.execute(sql_queries.sql_drop_tmp_tables);
         #self.conn.commit();
         return;
@@ -189,7 +191,7 @@ class PgsqlTarget(PostGisWriter):
             for key in ["name","ref","operator","from","to","route","colour","type","public_transport"]:
                 self.__tags[key]=None;
         elif (tag=="osm"): 
-            print("parsing XML");
+            logger.info("parsing XML");
             #self.__printStat();
  
     def end(self, tag):
@@ -215,9 +217,9 @@ class PgsqlTarget(PostGisWriter):
     def data(self, data):
         return
     def comment(self, text):
-        print("comment %s" % text)
+        logger.info("comment %s" % text)
     def close(self):
-        print("end of the XML");
+        logger.info("end of the XML");
         return "closed!"
 
 def usage():
