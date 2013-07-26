@@ -322,7 +322,7 @@ function onEachActiveRouteBusstopFeature(data,layer){
 	var busstop=mapBusstops[data.properties.osm_id];
 	layer.on('click',busstopOnClick);
 	layer.on('contextmenu',busstopOnClick);
-	layer.bindLabel(busstop.name,{noHide:true});
+	layer.bindLabel(data.properties.num+". "+busstop.name);
 }
 
 function addLayers(){
