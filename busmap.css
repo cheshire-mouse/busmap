@@ -1,0 +1,21 @@
+/*
+   Busmap style
+
+$Revision$
+$Date$
+$HeadURL$
+*/
+.busmap-numbered-marker {
+	font: 14px "Helvetica Neue", Arial, Helvetica, sans-serif;
+	width: 18px;
+	height: 18px;
+	margin-left: -11px;
+	margin-top: -11px;
+	text-align: center;
+	border-radius: 18px;
+	border-color: blue;
+	border-width: 2px;
+	border-style: solid;
+	background-color: orange;
+}
+
