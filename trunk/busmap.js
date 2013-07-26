@@ -22,12 +22,12 @@ var visibleCount=0;
 var defaultRouteStyle={opacity:0.5,weight:5};
 var activeRouteStyle={opacity:1,weight:10};
 var defaultBusstopStyle={opacity:0.5,fillOpacity:0.2,color:"blue",fillColor:"blue"};
-var activeBusstopStyle={opacity:1,fillOpacity:1,color:"blue",fillColor:"orange"};
 
 var cancelNextMapMoveEvent=false;
 
 var layerRoutes;
 var layerBusstops;
+var layerActiveRouteBusstops;
 
 var mapRoutes;
 var mapBusstops;
@@ -51,9 +51,9 @@ function initmap() {
 		' contributors';
 	var osm = new L.TileLayer(osmUrl, { minZoom: 1, maxZoom: 18, attribution: osmAttrib});		
 
-	map.fitWorld();
-	map.locate({setView:true});
 	map.addLayer(osm);
+	map.fitWorld({});
+	map.locate({setView:true});
 
 	layerRoutes=new L.GeoJSON([],{
 		onEachFeature: onEachRouteFeature	
@@ -63,6 +63,18 @@ function initmap() {
 			return L.circleMarker(latlng,defaultBusstopStyle);
 		},
 		onEachFeature: onEachBusstopFeature	
+	});
+	layerActiveRouteBusstops=new L.GeoJSON([],{
+		pointToLayer: function(data,latlng){
+			var markerHtml="<b>"+data.properties.num+"</b>";
+			var icon=new L.DivIcon({
+				html:markerHtml,
+				iconSize:null,
+				className:"busmap-numbered-marker"
+			});
+			return new L.Marker(latlng,{icon:icon});
+		},
+		onEachFeature: onEachActiveRouteBusstopFeature	
 	});
 
 	busstopsAllowed=document.getElementById("chkAllowStops").checked;
@@ -174,9 +186,10 @@ function processJSON(){
 		for (var i in routes)
 			if (routes[i].isVisible) mapVisibleRoutes[routes[i].osm_id]=true;
 	visibleCount=0;
-	removeActiveRouteBusstopsLayers();
 	layerRoutes.clearLayers();
 	layerBusstops.clearLayers();
+	layerActiveRouteBusstops.clearLayers();
+	map.removeLayer(layerActiveRouteBusstops);
 
 	busstops=routesJson["busstops"];
 	mapBusstops=new Object();
@@ -304,6 +317,13 @@ function onEachBusstopFeature(data,layer){
 	layer.bindLabel(busstop.name,{noHide:true});
 }
 
+function onEachActiveRouteBusstopFeature(data,layer){
+	var busstop=mapBusstops[data.properties.osm_id];
+	layer.on('click',busstopOnClick);
+	layer.on('contextmenu',busstopOnClick);
+	layer.bindLabel(busstop.name,{noHide:true});
+}
+
 function addLayers(){
 	map.addLayer(layerRoutes);
 	if (busstopsAllowed) map.addLayer(layerBusstops);
@@ -359,8 +379,8 @@ function setRouteVisibility(route,isVisible){
 			route.stops[i].visibleRoutes++;
 			layerBusstops.addLayer(route.stops[i].layer);
 		}
-		if (activeRoute==route && !busstopsAllowed) 
-			addActiveRouteBusstopsLayers();
+		if (activeRoute==route) 
+			map.addLayer(layerActiveRouteBusstops);
 	}
 	else {
 		visibleCount--;
@@ -370,8 +390,8 @@ function setRouteVisibility(route,isVisible){
 			if (route.stops[i].visibleRoutes==0)
 				layerBusstops.removeLayer(route.stops[i].layer);
 		}
-		if (activeRoute==route && !busstopsAllowed) 
-			removeActiveRouteBusstopsLayers();
+		if (activeRoute==route) 
+			map.removeLayer(layerActiveRouteBusstops);
 	}
 }
 
@@ -380,12 +400,10 @@ function chkAllowStopsOnChange(){
 	busstopsAllowed=chk.checked;
 	if ( busstopsAllowed ) {
 		map.addLayer(layerBusstops);
-		addActiveRouteBusstopsLayers();
 		moveActiveRouteToFront();
 	}
 	else  {
 		map.removeLayer(layerBusstops);
-		addActiveRouteBusstopsLayers();
 	}
 }
 
@@ -398,14 +416,15 @@ function checkAll(){
 		setRouteVisibility(routes[i],visible);
 	}
 	if (visible && busstopsAllowed) layerBusstops.bringToFront();
+	console.debug("moveActiveRouteToFront");
+	console.debug(map.hasLayer(layerActiveRouteBusstops));
 	if (visible) moveActiveRouteToFront();
 }
 
 function moveActiveRouteToFront(){
 	if (activeRoute==null || !activeRoute.isVisible) return;
 	activeRoute.layer.bringToFront();
-	for (var i in activeRoute.stops)
-		activeRoute.stops[i].layer.bringToFront();
+	layerActiveRouteBusstops.bringToFront();
 }
 
 //merge adjucent lines in the array of lines
@@ -482,9 +501,8 @@ function chkAutorefreshOnChange(){
 function activateRoute(route,popupCoord){
 	var layer=route.layer;
 	if (activeRoute!=null){ 
+		layerActiveRouteBusstops.clearLayers();
 		setRouteStyle(activeRoute,false);
-		updateBusstopsIndexes(activeRoute,false);
-		removeActiveRouteBusstopsLayers();
 		if (busstopsAllowed) layerBusstops.bringToFront();
 	}
 	if (activeRoute!=null && activeRoute.osm_id==route.osm_id)	{
@@ -494,60 +512,38 @@ function activateRoute(route,popupCoord){
 	else {
 		activeRoute=route;
 		setRouteStyle(route,true);
-		addActiveRouteBusstopsLayers();
-		updateBusstopsIndexes(route,true);
+		addActiveRouteBusstopsMarkers();
+		map.addLayer(layerActiveRouteBusstops);
 		moveActiveRouteToFront();
 		if (popupCoord!=null) openPopup(popupCoord,route.popupContent,"route",true);
 	}
 }
 
-function updateBusstopsIndexes(route,withIndex){
-	for (var i=route.stops.length-1;i>=0;i--){
-		var index=parseInt(i)+1;
-		route.stops[i].layer.unbindInnerLabel();
-		if (withIndex){ 
-			route.stops[i].layer.bindInnerLabel(index.toString());
-			route.stops[i].layer.showInnerLabel();
-		}
+function addActiveRouteBusstopsMarkers(){
+	if (activeRoute==null) return;
+	var route=activeRoute;
+	for (var i=route.stops.length-1;i>=0;i--){ 
+		route.stops[i].point.properties.num=i+1;
+		layerActiveRouteBusstops.addData(route.stops[i].point);
 	}
-}
-
-function addActiveRouteBusstopsLayers(){
-	if (activeRoute==null) return;
-	var route=activeRoute;
-	if (busstopsAllowed) return;
-	for (var i in route.stops) 
-		map.addLayer(route.stops[i].layer);
-}
-
-function removeActiveRouteBusstopsLayers(){
-	if (activeRoute==null) return;
-	var route=activeRoute;
-	if (busstopsAllowed) return;
-	for (var i in route.stops) 
-		map.removeLayer(route.stops[i].layer);
 }
 
 function setRouteStyle(route,active){
 	if (route==null) return;
-	var busstopStyle,routeStyle; 
+	var routeStyle; 
 	if (active){
 		routeStyle=activeRouteStyle;
-		busstopStyle=activeBusstopStyle;
 	}
 	else{
 		routeStyle=defaultRouteStyle;
-		busstopStyle=defaultBusstopStyle;
 	}
 	route.layer.setStyle(routeStyle);
-	for (var i in route.stops) 
-		route.stops[i].layer.setStyle(busstopStyle);
 }
 
 function routeOnClick(e){
 	var layer=e.target;
 	var popupCoord=e.latlng;
-	var routeid=layer.feature.properties.osm_id;
+	var routeid=layer.feature.geometry.properties.osm_id;
 	//hideLabel doesn't work, so create new label to make it hide
 	layer.unbindLabel();
 	layer.bindLabel(mapRoutes[routeid].name);
@@ -558,7 +554,7 @@ function routeOnClick(e){
 function routeOnContextmenu(e){
 	var layer=e.target;
 	var popupCoord=e.latlng;
-	var routeid=layer.feature.properties.osm_id;
+	var routeid=layer.feature.geometry.properties.osm_id;
 	openPopup(popupCoord,mapRoutes[routeid].popupContent,"route",true);
 }
 
@@ -580,7 +576,7 @@ function listRouteOnClick(e){
 }
 
 function activateBusstop(layer){
-	var stopid=layer.feature.properties.osm_id;
+	var stopid=layer.feature.geometry.properties.osm_id;
 	var stop=mapBusstops[stopid];
 	activeBusstop=stop;
 	openPopup(layer.getLatLng(),stop.popupContent,"busstop",true);
