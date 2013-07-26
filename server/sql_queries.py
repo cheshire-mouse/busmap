@@ -83,6 +83,8 @@ INSERT INTO tmp_nodes (
         FROM tmp_nodes_buf 
             WHERE osm_id IN (
                 SELECT DISTINCT nd_id FROM tmp_waysnd
+                UNION
+                SELECT DISTINCT node_id FROM tmp_relsnodes
                 )
         ) 
 ;
