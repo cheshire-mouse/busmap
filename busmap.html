@@ -45,14 +45,16 @@
 <div id="divControls" class="div-controls">
 	<label style="font: bold 38px courier;">Busmap</label>
 	<br>
-	<button id="btnRefresh" onclick="btnRefreshOnClick()">get routes</button>
+	<button id="btnRefresh" disabled onclick="btnRefreshOnClick()">получить</button>
 	<button id="btnCheckAll" onclick="btnCheckAllOnClick()">*</button>
+	&nbsp&nbsp&nbsp
+	<a href="about.html" style="font: bold 30px courier;">?</a>
 	<br>
 	<input type=checkbox id="chkAllowStops" onclick="chkAllowStopsOnChange()">
-	<label>Bus stops</label>
+	<label>остановки</label>
 	<br>
-	<input type=checkbox id="chkAutorefresh" onclick="chkAutorefreshOnChange()">
-	<label>Autorefresh</label>
+	<input type=checkbox id="chkAutorefresh" disabled onclick="chkAutorefreshOnChange()">
+	<label>автообновление</label>
 </div>
 <div id="divRoutesList" class="div-list"></div>
 <div id="map" class="div-map">
