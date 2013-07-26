@@ -78,7 +78,6 @@ function initmap() {
 	});
 
 	busstopsAllowed=document.getElementById("chkAllowStops").checked;
-	document.addEventListener("routesupdateend",docOnRoutesUpdateEnd);
 	map.on('popupclose',mapOnPopupClose);
 }
 
@@ -247,8 +246,7 @@ function processJSON(){
 	createCheckboxes();
 	enableButtons();
 	xmlhttp=null;
-	var evn=new CustomEvent("routesupdateend");
-	document.dispatchEvent(evn);
+	updatePopupContent();
 }
 
 
@@ -673,6 +671,3 @@ function updatePopupContent(){
 	openPopup(openedPopupLatLng,content,openedPopupType,false);
 }
 
-function docOnRoutesUpdateEnd(e){
-	updatePopupContent();
-}
