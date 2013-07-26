@@ -19,6 +19,9 @@ var autoRefresh=false;
 
 var visibleCount=0;
 
+var minRoutesZoom=11;
+var jsonUrlBase='http://198.199.107.98/routes.py/getroutes?';
+//var jsonUrlBase='http://postgis/routes.py/getroutes?';
 var defaultRouteStyle={opacity:0.5,weight:5};
 var activeRouteStyle={opacity:1,weight:10};
 var defaultBusstopStyle={opacity:0.5,fillOpacity:0.2,color:"blue",fillColor:"blue"};
@@ -54,6 +57,7 @@ function initmap() {
 	map.addLayer(osm);
 	map.fitWorld({});
 	map.locate({setView:true});
+	map.on("moveend",mapOnMoveendFirst);
 
 	layerRoutes=new L.GeoJSON([],{
 		onEachFeature: onEachRouteFeature	
@@ -79,6 +83,7 @@ function initmap() {
 
 	busstopsAllowed=document.getElementById("chkAllowStops").checked;
 	map.on('popupclose',mapOnPopupClose);
+	map.on('zoomend',mapOnZoomEnd);
 }
 
 function getRoutePopupHTML(route,withBusstops){
@@ -244,8 +249,8 @@ function processJSON(){
 	activeRoute=null;
 	if (newActiveRoute!=null) activateRoute(newActiveRoute,null);
 	createCheckboxes();
-	enableButtons();
 	xmlhttp=null;
+	enableButtons();
 	updatePopupContent();
 }
 
@@ -262,9 +267,7 @@ function requestRoutes() {
  	else {
 		return;
 	}
-	json_url='http://198.199.107.98/routes.py/getroutes?'+
-	//json_url='http://postgis/routes.py/getroutes?'+
-		'bboxe='+bbox.E+'&bboxw='+bbox.W+'&bboxn='+bbox.N+'&bboxs='+bbox.S;
+	var json_url=jsonUrlBase+'bboxe='+bbox.E+'&bboxw='+bbox.W+'&bboxn='+bbox.N+'&bboxs='+bbox.S;
 	xmlhttp.open("GET",json_url,true);
 	xmlhttp.onreadystatechange=processJSON;
 	xmlhttp.send(null);
@@ -328,10 +331,14 @@ function addLayers(){
 }
 
 function disableButtons(){
+	document.getElementById("chkAutorefresh").disabled=true;
 	document.getElementById("btnRefresh").disabled=true;
 }
 
 function enableButtons(){
+	if (xmlhttp!=null) return;
+	if (map.getZoom() < minRoutesZoom) return;
+	document.getElementById("chkAutorefresh").disabled=false;
 	document.getElementById("btnRefresh").disabled=false;
 }
 
@@ -491,6 +498,7 @@ function btnCheckAllOnClick() {
 
 function chkAutorefreshOnChange(){
 	var chk=document.getElementById("chkAutorefresh");
+	if ( autoRefresh == chk.checked ) return;
 	autoRefresh=chk.checked;
 	if (chk.checked) map.on('moveend',mapOnMoveend);
 	else map.off('moveend',mapOnMoveend);
@@ -621,6 +629,20 @@ function mapOnMoveend(e){
 function mapOnPopupClose(e){
 	openedPopupLatLng=null;
 	openedPopupType=null;
+}
+
+function mapOnZoomEnd(e){
+	if ( map.getZoom() < minRoutesZoom ) {
+		disableButtons();
+		var chkAutorefresh=document.getElementById("chkAutorefresh").checked=false;
+		chkAutorefreshOnChange();
+	}
+	else enableButtons();
+}
+
+function mapOnMoveendFirst(e){
+	map.off("moveend",mapOnMoveendFirst);
+	requestRoutes();
 }
 
 function resizePage(){
