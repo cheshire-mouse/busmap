@@ -18,4 +18,17 @@ $HeadURL$
 	border-style: solid;
 	background-color: orange;
 }
+.busmap-list-label {
+	cursor: pointer;
+}
+.busmap-popup-label {
+	cursor: pointer;
+	color: blue;
+}
+.busmap-list-colormarker{
+	cursor: default;
+}
+.busmap-popup-colormarker{
+	cursor: default;
+}
 

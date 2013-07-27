@@ -108,9 +108,10 @@ function getRoutePopupHTML(route,withBusstops){
 		for (var i in route.stops){
 			if (i>0) description+="<br>";
 			var stop_id=route.stops[i].osm_id;
-			description+="<a onclick=popupBusstopOnClick(event) value="+stop_id+">";
+			description+="<label onclick=popupBusstopOnClick(event) value="+stop_id+" ";
+			description+="class=busmap-popup-label>";
 			description+=(route.stops[i].name!=null)?(route.stops[i].name):("-???-");
-			description+="</a>";
+			description+="</label>";
 		}
 		description+="</div>";
 	}
@@ -131,10 +132,12 @@ function getBusstopPopupHTML(stop,withRoutes){
 					" id=popup_route_"+route_id+
 					" value="+route_id+
 					" onchange=chkPopupOnChange(event) "+">"+
-					"<span style=color:"+stop.routes[i].color+">\u2588 </span>";
-			descr+="<a onclick=popupRouteOnClick(event) value="+route_id+">";
+					"<span class=busmap-popup-colormarker "+
+					"style=color:"+stop.routes[i].color+">\u2588 </span>";
+			descr+="<label onclick=popupRouteOnClick(event) value="+route_id+" ";
+			descr+="class=busmap-popup-label>";
 			descr+=stop.routes[i].name;
-			descr+="</a>";
+			descr+="</label>";
 		}
 		descr+="</div>"
 	}
@@ -286,17 +289,19 @@ function createCheckboxes(){
 		if (routes[i].isVisible) checkbox.checked=true;
 		checkbox.addEventListener("change",checkOnChange);
 		var span=document.createElement("span");
+		span.className="busmap-list-colormarker";
 		span.style.color=routes[i].color;
 		colorMarker=document.createTextNode("\u2588 ");
-		var href=document.createElement("a");
-		href.textContent=routes[i].name;
-		href.addEventListener("click",listRouteOnClick);
-		href.value=routes[i].osm_id;
+		var label=document.createElement("label");
+		label.className="busmap-list-label";
+		label.textContent=routes[i].name;
+		label.addEventListener("click",listRouteOnClick);
+		label.value=routes[i].osm_id;
 		var br=document.createElement('br');
 		span.appendChild(colorMarker);
 		td.appendChild(checkbox);
 		td.appendChild(span);
-		td.appendChild(href);
+		td.appendChild(label);
 		td.appendChild(br);
 	}
 }
@@ -322,7 +327,8 @@ function onEachActiveRouteBusstopFeature(data,layer){
 	var busstop=mapBusstops[data.properties.osm_id];
 	layer.on('click',busstopOnClick);
 	layer.on('contextmenu',busstopOnClick);
-	layer.bindLabel(data.properties.num+". "+busstop.name);
+	var stopname=(busstop.name!=null)?(busstop.name):("-???-");
+	layer.bindLabel(data.properties.num+". "+stopname);
 }
 
 function addLayers(){
